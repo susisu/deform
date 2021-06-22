@@ -1,0 +1,13 @@
+{
+  "name": "@susisu/deform",
+  "version": "0.0.0",
+  "description": "",
+  "repository": "https://github.com/susisu/deform.git",
+  "author": "Susisu <susisu2413@yahoo.co.jp>",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {}
+}
