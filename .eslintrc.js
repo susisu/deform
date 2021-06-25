@@ -5,7 +5,7 @@ module.exports = {
   overrides: [
     // source files
     {
-      files: ["src/*.{ts,tsx}"],
+      files: ["*.{ts,tsx}"],
       extends: [
         "@susisu/eslint-config/preset/ts-types",
         "plugin:eslint-comments/recommended",
@@ -26,7 +26,7 @@ module.exports = {
     },
     // test files
     {
-      files: ["src/*.{test,spec}.{ts,tsx}", "src/**/__tests__/**/*.{ts,tsx}"],
+      files: ["src/**/*.{test,spec}.{ts,tsx}", "src/**/__tests__/**/*.{ts,tsx}"],
       extends: ["plugin:jest/recommended", "plugin:jest-formatting/recommended"],
       env: {
         "jest/globals": true,
