@@ -7,7 +7,7 @@ export interface Field<T> {
   setValue(value: T): void;
   setTouched(): void;
   setDirty(): void;
-  setError(name: string, error: unknown): void;
+  setErrors(errors: FieldErrors): void;
   attachValidator(name: string, validator: Validator<T>): Disposable;
 }
 
