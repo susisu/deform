@@ -72,9 +72,10 @@ export class FormField<T> implements Field<T> {
     this.isDispatchQueued = true;
     window.queueMicrotask(() => {
       this.isDispatchQueued = false;
+      const snapshot = this.snapshot;
       for (const subscriber of [...this.subscribers]) {
         try {
-          subscriber(this.snapshot);
+          subscriber(snapshot);
         } catch (err: unknown) {
           // eslint-disable-next-line no-console
           console.error(err);
