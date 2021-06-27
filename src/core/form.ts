@@ -100,25 +100,16 @@ export class FormField<T> implements Field<T> {
   }
 
   setValue(value: T): void {
-    if (Object.is(this.value, value)) {
-      return;
-    }
     this.value = value;
     this.updateSnapshot();
   }
 
   setTouched(): void {
-    if (this.isTouched) {
-      return;
-    }
     this.isTouched = true;
     this.updateSnapshot();
   }
 
   setDirty(): void {
-    if (this.isDirty) {
-      return;
-    }
     this.isDirty = true;
     this.updateSnapshot();
   }
