@@ -59,7 +59,7 @@ describe("FormField", () => {
         isPending: false,
       });
 
-      // After the state updated, 'getSnapshot' returns the latest state.
+      // After the state updated, 'getSnapshot' immediately returns the latest state.
       field.setValue(1);
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
@@ -148,6 +148,35 @@ describe("FormField", () => {
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
+    });
+
+    it("triggers validation", () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+
+      const validator = jest.fn(() => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
     });
   });
 
@@ -280,7 +309,7 @@ describe("FormField", () => {
         expect.objectContaining({ errors: { foo: false } })
       );
 
-      // removing custom errors restores the validation errors
+      // removing custom errors uncovers the validation errors
       field.setCustomErrors({});
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
@@ -294,7 +323,7 @@ describe("FormField", () => {
   });
 
   describe("#addValidator", () => {
-    it("attaches a validator to the field and calls it with the current value", async () => {
+    it("attaches a validator to the field", async () => {
       const field = new FormField({
         path: "$root.test",
         defaultValue: 0,
