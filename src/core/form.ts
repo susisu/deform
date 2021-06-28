@@ -209,6 +209,10 @@ export class FormField<T> implements Field<T> {
     }
   }
 
+  validate(): void {
+    this.runAllValidators();
+  }
+
   private runValidator(key: string): void {
     const validator = this.validators.get(key);
     if (!validator) {

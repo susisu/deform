@@ -9,6 +9,7 @@ export interface Field<T> {
   setDirty(): void;
   setCustomErrors(errors: FieldErrors): void;
   addValidator(key: string, validator: Validator<T>): Disposable;
+  validate(): void;
 }
 
 export type FieldSnapshot<T> = Readonly<{

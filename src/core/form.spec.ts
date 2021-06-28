@@ -157,10 +157,11 @@ describe("FormField", () => {
         value: 42,
       });
 
-      const validator = jest.fn(() => {});
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 42,
@@ -170,13 +171,15 @@ describe("FormField", () => {
 
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 1,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
+      expect(request2.id).not.toBe(request1.id);
     });
   });
 
@@ -339,7 +342,8 @@ describe("FormField", () => {
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 42,
@@ -355,7 +359,7 @@ describe("FormField", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      validator.mock.calls[0][0].resolve(true);
+      request1.resolve(true);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
@@ -370,13 +374,15 @@ describe("FormField", () => {
       // creates a new validation request when 'value' is changed
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 1,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
+      expect(request2.id).not.toBe(request1.id);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: true })
       );
@@ -388,7 +394,7 @@ describe("FormField", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: true })
       );
 
-      validator.mock.calls[1][0].resolve(false);
+      request2.resolve(false);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
@@ -417,7 +423,8 @@ describe("FormField", () => {
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 42,
@@ -427,7 +434,7 @@ describe("FormField", () => {
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       const onAbort = jest.fn(() => {});
-      validator.mock.calls[0][0].signal.addEventListener("abort", onAbort);
+      request1.signal.addEventListener("abort", onAbort);
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
@@ -441,13 +448,15 @@ describe("FormField", () => {
       // creates a new validation request when 'value' is changed
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 1,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
+      expect(request2.id).not.toBe(request1.id);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
       expect(onAbort).toHaveBeenCalledTimes(1);
 
@@ -458,7 +467,7 @@ describe("FormField", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      validator.mock.calls[1][0].resolve(false);
+      request2.resolve(false);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
@@ -471,7 +480,7 @@ describe("FormField", () => {
       );
 
       // resolving an aborted request has no effect
-      validator.mock.calls[0][0].resolve(true);
+      request1.resolve(true);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
@@ -497,7 +506,8 @@ describe("FormField", () => {
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 42,
@@ -513,7 +523,7 @@ describe("FormField", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      validator.mock.calls[0][0].resolve(true);
+      request.resolve(true);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
@@ -554,7 +564,8 @@ describe("FormField", () => {
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenLastCalledWith({
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: false,
         value: 42,
@@ -564,7 +575,7 @@ describe("FormField", () => {
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       const onAbort = jest.fn(() => {});
-      validator.mock.calls[0][0].signal.addEventListener("abort", onAbort);
+      request.signal.addEventListener("abort", onAbort);
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
@@ -588,7 +599,7 @@ describe("FormField", () => {
       );
 
       // resolving an aborted request has no effect
-      validator.mock.calls[0][0].resolve(true);
+      request.resolve(true);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: {}, isPending: false })
       );
@@ -610,6 +621,57 @@ describe("FormField", () => {
       expect(() => {
         field.addValidator("foo", () => {});
       }).toThrowError("FormField '$root.test' already has a validator 'foo'");
+    });
+  });
+
+  describe("#validate", () => {
+    it("triggers validation", () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      field.validate();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: true })
+      );
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
     });
   });
 });
