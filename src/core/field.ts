@@ -31,7 +31,6 @@ export type ValidationRequest<T> = Readonly<{
   onetime: boolean;
   value: T;
   resolve: (error: unknown) => void;
-  reject: (reason?: string) => void;
   signal: AbortSignal;
 }>;
 
