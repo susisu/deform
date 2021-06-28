@@ -5,7 +5,11 @@ module.exports = {
   testMatch: ["**/*.{test,spec}.{ts,tsx}"],
   testEnvironment: "jsdom",
   collectCoverage: true,
-  collectCoverageFrom: ["./src/**/*.{ts,tsx}", "!./src/**/*.{test,spec}.{ts,tsx}"],
+  collectCoverageFrom: [
+    "./src/**/*.{ts,tsx}",
+    "!./src/**/*.{test,spec}.{ts,tsx}",
+    "!./src/**/__tests__/**/*.{ts,tsx}",
+  ],
   coverageDirectory: "coverage",
   globals: {
     "ts-jest": {
