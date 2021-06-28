@@ -609,6 +609,57 @@ describe("FormField", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
     });
 
+    it("does nothing when a validator is removed twice", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const removeValidator = field.addValidator("foo", ({ resolve }) => {
+        resolve(true);
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true } })
+      );
+
+      removeValidator();
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ errors: {} }));
+
+      field.addValidator("foo", ({ resolve }) => {
+        resolve(false);
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: false } })
+      );
+
+      removeValidator();
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+    });
+
     it("throws error if the field already has a validator with the same name", () => {
       const field = new FormField({
         path: "$root.test",
