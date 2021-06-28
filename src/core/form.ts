@@ -18,14 +18,23 @@ export class FormField<T> implements Field<T> {
   readonly id: string;
   readonly path: string;
 
-  private snapshot: FieldSnapshot<T>;
-
   private subscribers: Set<FieldSubscriber<T>>;
   private isDispatchQueued: boolean;
+
+  private validationErrors: FieldErrors;
+  private customErrors: FieldErrors;
+
+  private snapshot: FieldSnapshot<T>;
 
   constructor(params: FormFieldParams<T>) {
     this.id = `FormField/${uniqueId()}`;
     this.path = params.path;
+
+    this.subscribers = new Set();
+    this.isDispatchQueued = false;
+
+    this.validationErrors = {};
+    this.customErrors = {};
 
     this.snapshot = {
       defaultValue: params.defaultValue,
@@ -33,11 +42,15 @@ export class FormField<T> implements Field<T> {
       isTouched: false,
       isDirty: false,
       isPending: false,
-      errors: {},
+      errors: this.errors(),
     };
+  }
 
-    this.subscribers = new Set();
-    this.isDispatchQueued = false;
+  private errors(): FieldErrors {
+    return {
+      ...this.validationErrors,
+      ...this.customErrors,
+    };
   }
 
   getSnapshot(): FieldSnapshot<T> {
@@ -122,6 +135,11 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
+  private updateErrors(): void {
+    const errors = this.errors();
+    this._setErrors(errors);
+  }
+
   setValue(value: T): void {
     this._setValue(value);
   }
@@ -134,8 +152,12 @@ export class FormField<T> implements Field<T> {
     this._setIsDirty(true);
   }
 
-  setCustomErrors(_customErrors: FieldErrors): void {
-    throw new Error("not implemented");
+  setCustomErrors(customErrors: FieldErrors): void {
+    if (isEqualErrors(this.customErrors, customErrors)) {
+      return;
+    }
+    this.customErrors = customErrors;
+    this.updateErrors();
   }
 
   addValidator(_name: string, _validator: Validator<T>): Disposable {

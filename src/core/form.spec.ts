@@ -207,4 +207,43 @@ describe("FormField", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("#setCustomErrors", () => {
+    it("sets custom errors of the field", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setCustomErrors({ foo: true, bar: false });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true, bar: false } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true, bar: false } })
+      );
+
+      // does nothing if the field has the same errors
+      field.setCustomErrors({ foo: true, bar: false });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true, bar: false } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    // TODO
+    it.todo("overrides validation errors");
+  });
 });
