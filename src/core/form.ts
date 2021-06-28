@@ -118,7 +118,7 @@ export class FormField<T> implements Field<T> {
     throw new Error("not implemented");
   }
 
-  attachValidator(_name: string, _validator: Validator<T>): Disposable {
+  addValidator(_name: string, _validator: Validator<T>): Disposable {
     throw new Error("not implemented");
   }
 }

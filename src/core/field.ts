@@ -8,7 +8,7 @@ export interface Field<T> {
   setTouched(): void;
   setDirty(): void;
   setErrors(errors: FieldErrors): void;
-  attachValidator(name: string, validator: Validator<T>): Disposable;
+  addValidator(name: string, validator: Validator<T>): Disposable;
 }
 
 export type FieldSnapshot<T> = Readonly<{
