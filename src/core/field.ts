@@ -10,6 +10,7 @@ export interface Field<T> {
   setCustomErrors(errors: FieldErrors): void;
   addValidator(name: string, validator: Validator<T>): Disposable;
   validate(): void;
+  validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors>;
 }
 
 export type FieldSnapshot<T> = Readonly<{
@@ -33,6 +34,10 @@ export type ValidationRequest<T> = Readonly<{
   value: T;
   resolve: (error: unknown) => void;
   signal: AbortSignal;
+}>;
+
+export type ValidateOnceOptions = Readonly<{
+  signal?: AbortSignal;
 }>;
 
 export function isValid(errors: FieldErrors): boolean {

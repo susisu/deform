@@ -1,4 +1,12 @@
-import { Disposable, Field, FieldErrors, FieldSnapshot, FieldSubscriber, Validator } from "./field";
+import {
+  Disposable,
+  Field,
+  FieldErrors,
+  FieldSnapshot,
+  FieldSubscriber,
+  ValidateOnceOptions,
+  Validator,
+} from "./field";
 
 const uniqueId = (() => {
   let uniqueIdCounter = 0;
@@ -213,6 +221,22 @@ export class FormField<T> implements Field<T> {
     this.runAllValidators();
   }
 
+  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
+    const signal = options?.signal;
+    const controller = new window.AbortController();
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
+    const customErrors = this.customErrors;
+    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
+    return {
+      ...validationErrors,
+      ...customErrors,
+    };
+  }
+
   private runValidator(name: string): void {
     const validator = this.validators.get(name);
     if (!validator) {
@@ -262,6 +286,41 @@ export class FormField<T> implements Field<T> {
       this.updateErrors();
       this.updateIsPending();
     }
+  }
+
+  private runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
+    const validator = this.validators.get(name);
+    if (!validator) {
+      // eslint-disable-next-line no-console
+      console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
+      return Promise.resolve(undefined);
+    }
+
+    return new Promise<unknown>((resolve, reject) => {
+      signal.addEventListener("abort", () => {
+        reject(new Error("Aborted"));
+      });
+      const requestId = `ValidationRequest/${uniqueId()}`;
+      validator({
+        id: requestId,
+        onetime: true,
+        value,
+        resolve: error => {
+          if (!signal.aborted) {
+            resolve(error);
+          }
+        },
+        signal,
+      });
+    });
+  }
+
+  private runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
+    return Promise.all(
+      [...this.validators.keys()].map(name =>
+        this.runValidatorOnce(name, value, signal).then(error => [name, error] as const)
+      )
+    ).then(entries => Object.fromEntries(entries));
   }
 }
 

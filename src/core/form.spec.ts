@@ -674,4 +674,174 @@ describe("FormField", () => {
       );
     });
   });
+
+  describe("#validateOnce", () => {
+    it("runs attached validators with a given value and returns the errors", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      const promise = field.validateOnce(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: true,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      await expect(promise).resolves.toEqual({ foo: false });
+    });
+
+    it("includes custom errors in the result", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      field.setCustomErrors({ foo: true, bar: true });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
+      );
+
+      const promise = field.validateOnce(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: true,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
+      );
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
+      );
+
+      field.setCustomErrors({ foo: false, bar: false });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: false, bar: false }, isPending: false })
+      );
+
+      // custom errors at the time when 'validateOnce' is called is used
+      // custom errors overrides validation errors
+      await expect(promise).resolves.toEqual({ foo: true, bar: true });
+    });
+
+    it("can be aborted using AbortSignal", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      const controller = new window.AbortController();
+      const promise = field.validateOnce(1, { signal: controller.signal });
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: true,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      controller.abort();
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      await expect(promise).rejects.toThrowError("Aborted");
+    });
+  });
 });
