@@ -18,14 +18,8 @@ export class FormField<T> implements Field<T> {
   readonly id: string;
   readonly path: string;
 
-  private defaultValue: T;
-  private value: T;
-  private isTouched: boolean;
-  private isDirty: boolean;
-  private isPending: boolean;
-  private errors: FieldErrors;
-
   private snapshot: FieldSnapshot<T>;
+
   private subscribers: Set<FieldSubscriber<T>>;
   private isDispatchQueued: boolean;
 
@@ -33,36 +27,32 @@ export class FormField<T> implements Field<T> {
     this.id = `FormField/${uniqueId()}`;
     this.path = params.path;
 
-    this.defaultValue = params.defaultValue;
-    this.value = params.value;
-    this.isTouched = false;
-    this.isDirty = false;
-    this.isPending = false;
-    this.errors = {};
+    this.snapshot = {
+      defaultValue: params.defaultValue,
+      value: params.value,
+      isTouched: false,
+      isDirty: false,
+      isPending: false,
+      errors: {},
+    };
 
-    this.snapshot = this.takeSnapshot();
     this.subscribers = new Set();
     this.isDispatchQueued = false;
   }
 
-  private takeSnapshot(): FieldSnapshot<T> {
-    return {
-      defaultValue: this.defaultValue,
-      value: this.value,
-      isTouched: this.isTouched,
-      isDirty: this.isDirty,
-      errors: this.errors,
-      isPending: this.isPending,
+  getSnapshot(): FieldSnapshot<T> {
+    return this.snapshot;
+  }
+
+  subscribe(subscriber: FieldSubscriber<T>): Disposable {
+    this.subscribers.add(subscriber);
+    return () => {
+      this.unsubscribe(subscriber);
     };
   }
 
-  private updateSnapshot(): void {
-    const snapshot = this.takeSnapshot();
-    if (isEqualSnapshot(this.snapshot, snapshot)) {
-      return;
-    }
-    this.snapshot = snapshot;
-    this.queueDispatch();
+  private unsubscribe(subscriber: FieldSubscriber<T>): void {
+    this.subscribers.delete(subscriber);
   }
 
   private queueDispatch(): void {
@@ -84,34 +74,64 @@ export class FormField<T> implements Field<T> {
     });
   }
 
-  getSnapshot(): FieldSnapshot<T> {
-    return this.snapshot;
+  private _setDefaultValue(defaultValue: T): void {
+    if (Object.is(this.snapshot.defaultValue, defaultValue)) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, defaultValue };
+    this.queueDispatch();
   }
 
-  subscribe(subscriber: FieldSubscriber<T>): Disposable {
-    this.subscribers.add(subscriber);
-    return () => {
-      this.unsubscribe(subscriber);
-    };
+  private _setValue(value: T): void {
+    if (Object.is(this.snapshot.value, value)) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, value };
+    this.queueDispatch();
   }
 
-  private unsubscribe(subscriber: FieldSubscriber<T>): void {
-    this.subscribers.delete(subscriber);
+  private _setIsTouched(isTouched: boolean): void {
+    if (this.snapshot.isTouched === isTouched) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, isTouched };
+    this.queueDispatch();
+  }
+
+  private _setIsDirty(isDirty: boolean): void {
+    if (this.snapshot.isDirty === isDirty) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, isDirty };
+    this.queueDispatch();
+  }
+
+  private _setIsPending(isPending: boolean): void {
+    if (this.snapshot.isPending === isPending) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, isPending };
+    this.queueDispatch();
+  }
+
+  private _setErrors(errors: FieldErrors): void {
+    if (isEqualErrors(this.snapshot.errors, errors)) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, errors };
+    this.queueDispatch();
   }
 
   setValue(value: T): void {
-    this.value = value;
-    this.updateSnapshot();
+    this._setValue(value);
   }
 
   setTouched(): void {
-    this.isTouched = true;
-    this.updateSnapshot();
+    this._setIsTouched(true);
   }
 
   setDirty(): void {
-    this.isDirty = true;
-    this.updateSnapshot();
+    this._setIsDirty(true);
   }
 
   setCustomErrors(_customErrors: FieldErrors): void {
@@ -121,17 +141,6 @@ export class FormField<T> implements Field<T> {
   addValidator(_name: string, _validator: Validator<T>): Disposable {
     throw new Error("not implemented");
   }
-}
-
-function isEqualSnapshot<T>(a: FieldSnapshot<T>, b: FieldSnapshot<T>): boolean {
-  return (
-    Object.is(a.defaultValue, b.defaultValue) &&
-    Object.is(a.value, b.value) &&
-    a.isTouched === b.isTouched &&
-    a.isDirty === b.isDirty &&
-    isEqualErrors(a.errors, b.errors) &&
-    a.isPending === b.isPending
-  );
 }
 
 function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
