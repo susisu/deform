@@ -183,25 +183,25 @@ export class FormField<T> implements Field<T> {
     this.updateErrors();
   }
 
-  addValidator(key: string, validator: Validator<T>): Disposable {
-    if (this.validators.has(key)) {
-      throw new Error(`FormField '${this.path}' already has a validator '${key}'`);
+  addValidator(name: string, validator: Validator<T>): Disposable {
+    if (this.validators.has(name)) {
+      throw new Error(`FormField '${this.path}' already has a validator named '${name}'`);
     }
-    this.validators.set(key, validator);
-    this.runValidator(key);
+    this.validators.set(name, validator);
+    this.runValidator(name);
     return () => {
-      this.removeValidator(key, validator);
+      this.removeValidator(name, validator);
     };
   }
 
-  private removeValidator(key: string, validator: Validator<T>): void {
-    if (this.validators.get(key) === validator) {
-      this.validators.delete(key);
+  private removeValidator(name: string, validator: Validator<T>): void {
+    if (this.validators.get(name) === validator) {
+      this.validators.delete(name);
 
-      this.abortPendingValidation(key);
-      this.validationStatuses.delete(key);
+      this.abortPendingValidation(name);
+      this.validationStatuses.delete(name);
 
-      const { [key]: _, ...errors } = this.validationErrors;
+      const { [name]: _, ...errors } = this.validationErrors;
       this.validationErrors = errors;
 
       this.updateErrors();
@@ -213,26 +213,26 @@ export class FormField<T> implements Field<T> {
     this.runAllValidators();
   }
 
-  private runValidator(key: string): void {
-    const validator = this.validators.get(key);
+  private runValidator(name: string): void {
+    const validator = this.validators.get(name);
     if (!validator) {
       // eslint-disable-next-line no-console
-      console.warn(`Unexpected: FormField '${this.path}' has no validator for key '${key}'`);
+      console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
       return;
     }
 
-    this.abortPendingValidation(key);
+    this.abortPendingValidation(name);
 
     const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
-    this.validationStatuses.set(key, { type: "pending", requestId, controller });
+    this.validationStatuses.set(name, { type: "pending", requestId, controller });
 
     validator({
       id: requestId,
       onetime: false,
       value: this.snapshot.value,
       resolve: error => {
-        this.resolveValidation(key, requestId, error);
+        this.resolveValidation(name, requestId, error);
       },
       signal: controller.signal,
     });
@@ -241,23 +241,23 @@ export class FormField<T> implements Field<T> {
   }
 
   private runAllValidators(): void {
-    for (const key of this.validators.keys()) {
-      this.runValidator(key);
+    for (const name of this.validators.keys()) {
+      this.runValidator(name);
     }
   }
 
-  private abortPendingValidation(key: string): void {
-    const status = this.validationStatuses.get(key);
+  private abortPendingValidation(name: string): void {
+    const status = this.validationStatuses.get(name);
     if (status && status.type === "pending") {
       status.controller.abort();
     }
   }
 
-  private resolveValidation(key: string, requestId: string, error: unknown): void {
-    const status = this.validationStatuses.get(key);
+  private resolveValidation(name: string, requestId: string, error: unknown): void {
+    const status = this.validationStatuses.get(name);
     if (status && status.type === "pending" && status.requestId === requestId) {
-      this.validationErrors = { ...this.validationErrors, [key]: error };
-      this.validationStatuses.set(key, { type: "done" });
+      this.validationErrors = { ...this.validationErrors, [name]: error };
+      this.validationStatuses.set(name, { type: "done" });
 
       this.updateErrors();
       this.updateIsPending();
@@ -269,12 +269,12 @@ function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
   if (a === b) {
     return true;
   }
-  const aKeys = Object.keys(a).sort();
-  const bKeys = Object.keys(b).sort();
-  if (aKeys.length !== bKeys.length) {
+  const aNames = Object.keys(a).sort();
+  const bNames = Object.keys(b).sort();
+  if (aNames.length !== bNames.length) {
     return false;
   }
-  return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
+  return aNames.every((name, i) => bNames[i] === name && Object.is(a[name], b[name]));
 }
 
 type ValidationStatus =

@@ -8,7 +8,7 @@ export interface Field<T> {
   setTouched(): void;
   setDirty(): void;
   setCustomErrors(errors: FieldErrors): void;
-  addValidator(key: string, validator: Validator<T>): Disposable;
+  addValidator(name: string, validator: Validator<T>): Disposable;
   validate(): void;
 }
 
@@ -36,6 +36,6 @@ export type ValidationRequest<T> = Readonly<{
 }>;
 
 export function isValid(errors: FieldErrors): boolean {
-  const keys = Object.keys(errors);
-  return keys.every(key => !errors[key]);
+  const names = Object.keys(errors);
+  return names.every(name => !errors[name]);
 }
