@@ -8,7 +8,7 @@ export interface Field<T> {
   setTouched(): void;
   setDirty(): void;
   setCustomErrors(customErrors: FieldErrors): void;
-  addValidator(name: string, validator: Validator<T>): Disposable;
+  addValidator(key: string, validator: Validator<T>): Disposable;
 }
 
 export type FieldSnapshot<T> = Readonly<{
@@ -34,3 +34,8 @@ export type ValidationRequest<T> = Readonly<{
   reject: (reason?: string) => void;
   signal: AbortSignal;
 }>;
+
+export function isValid(errors: FieldErrors): boolean {
+  const keys = Object.keys(errors);
+  return keys.every(key => !errors[key]);
+}

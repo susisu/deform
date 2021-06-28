@@ -160,7 +160,7 @@ export class FormField<T> implements Field<T> {
     this.updateErrors();
   }
 
-  addValidator(_name: string, _validator: Validator<T>): Disposable {
+  addValidator(_key: string, _validator: Validator<T>): Disposable {
     throw new Error("not implemented");
   }
 }
