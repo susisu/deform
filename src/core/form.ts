@@ -221,22 +221,6 @@ export class FormField<T> implements Field<T> {
     this.runAllValidators();
   }
 
-  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
-    const signal = options?.signal;
-    const controller = new window.AbortController();
-    if (signal) {
-      signal.addEventListener("abort", () => {
-        controller.abort();
-      });
-    }
-    const customErrors = this.customErrors;
-    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
-    return {
-      ...validationErrors,
-      ...customErrors,
-    };
-  }
-
   private runValidator(name: string): void {
     const validator = this.validators.get(name);
     if (!validator) {
@@ -286,6 +270,22 @@ export class FormField<T> implements Field<T> {
       this.updateErrors();
       this.updateIsPending();
     }
+  }
+
+  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
+    const signal = options?.signal;
+    const controller = new window.AbortController();
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
+    const customErrors = this.customErrors;
+    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
+    return {
+      ...validationErrors,
+      ...customErrors,
+    };
   }
 
   private runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
