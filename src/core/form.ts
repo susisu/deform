@@ -22,8 +22,8 @@ export class FormField<T> implements Field<T> {
   private value: T;
   private isTouched: boolean;
   private isDirty: boolean;
-  private errors: FieldErrors;
   private isPending: boolean;
+  private errors: FieldErrors;
 
   private snapshot: FieldSnapshot<T>;
   private subscribers: Set<FieldSubscriber<T>>;
@@ -37,8 +37,8 @@ export class FormField<T> implements Field<T> {
     this.value = params.value;
     this.isTouched = false;
     this.isDirty = false;
-    this.errors = {};
     this.isPending = false;
+    this.errors = {};
 
     this.snapshot = this.takeSnapshot();
     this.subscribers = new Set();
@@ -114,7 +114,7 @@ export class FormField<T> implements Field<T> {
     this.updateSnapshot();
   }
 
-  setErrors(_errors: FieldErrors): void {
+  setCustomErrors(_customErrors: FieldErrors): void {
     throw new Error("not implemented");
   }
 

@@ -7,7 +7,7 @@ export interface Field<T> {
   setValue(value: T): void;
   setTouched(): void;
   setDirty(): void;
-  setErrors(errors: FieldErrors): void;
+  setCustomErrors(customErrors: FieldErrors): void;
   addValidator(name: string, validator: Validator<T>): Disposable;
 }
 
@@ -16,8 +16,8 @@ export type FieldSnapshot<T> = Readonly<{
   value: T;
   isTouched: boolean;
   isDirty: boolean;
-  errors: FieldErrors;
   isPending: boolean;
+  errors: FieldErrors;
 }>;
 
 export type FieldSubscriber<T> = (snapshot: FieldSnapshot<T>) => void;
