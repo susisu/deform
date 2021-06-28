@@ -246,4 +246,20 @@ describe("FormField", () => {
     // TODO
     it.todo("overrides validation errors");
   });
+
+  describe("#addValidator", () => {
+    it("throws error if the field already has a validator with the same key", () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+
+      field.addValidator("foo", () => {});
+
+      expect(() => {
+        field.addValidator("foo", () => {});
+      }).toThrowError("FormField '$root.test' already has a validator 'foo'");
+    });
+  });
 });

@@ -24,6 +24,8 @@ export class FormField<T> implements Field<T> {
   private validationErrors: FieldErrors;
   private customErrors: FieldErrors;
 
+  private validators: Map<string, Validator<T>>;
+
   private snapshot: FieldSnapshot<T>;
 
   constructor(params: FormFieldParams<T>) {
@@ -36,13 +38,15 @@ export class FormField<T> implements Field<T> {
     this.validationErrors = {};
     this.customErrors = {};
 
+    this.validators = new Map();
+
     this.snapshot = {
       defaultValue: params.defaultValue,
       value: params.value,
       isTouched: false,
       isDirty: false,
-      isPending: false,
       errors: this.errors(),
+      isPending: this.isPending(),
     };
   }
 
@@ -51,6 +55,11 @@ export class FormField<T> implements Field<T> {
       ...this.validationErrors,
       ...this.customErrors,
     };
+  }
+
+  private isPending(): boolean {
+    // TODO: derive from validation statuses
+    return false;
   }
 
   getSnapshot(): FieldSnapshot<T> {
@@ -119,14 +128,6 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setIsPending(isPending: boolean): void {
-    if (this.snapshot.isPending === isPending) {
-      return;
-    }
-    this.snapshot = { ...this.snapshot, isPending };
-    this.queueDispatch();
-  }
-
   private _setErrors(errors: FieldErrors): void {
     if (isEqualErrors(this.snapshot.errors, errors)) {
       return;
@@ -135,13 +136,27 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
+  private _setIsPending(isPending: boolean): void {
+    if (this.snapshot.isPending === isPending) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, isPending };
+    this.queueDispatch();
+  }
+
   private updateErrors(): void {
     const errors = this.errors();
     this._setErrors(errors);
   }
 
+  private updateIsPending(): void {
+    const isPending = this.isPending();
+    this._setIsPending(isPending);
+  }
+
   setValue(value: T): void {
     this._setValue(value);
+    // TODO: run validators
   }
 
   setTouched(): void {
@@ -152,16 +167,30 @@ export class FormField<T> implements Field<T> {
     this._setIsDirty(true);
   }
 
-  setCustomErrors(customErrors: FieldErrors): void {
-    if (isEqualErrors(this.customErrors, customErrors)) {
+  setCustomErrors(errors: FieldErrors): void {
+    if (isEqualErrors(this.customErrors, errors)) {
       return;
     }
-    this.customErrors = customErrors;
+    this.customErrors = errors;
     this.updateErrors();
   }
 
-  addValidator(_key: string, _validator: Validator<T>): Disposable {
-    throw new Error("not implemented");
+  addValidator(key: string, validator: Validator<T>): Disposable {
+    if (this.validators.has(key)) {
+      throw new Error(`FormField '${this.path}' already has a validator '${key}'`);
+    }
+    this.validators.set(key, validator);
+    // TODO: run validator
+    return () => {
+      this.removeValidator(key, validator);
+    };
+  }
+
+  private removeValidator(key: string, validator: Validator<T>): void {
+    if (this.validators.get(key) === validator) {
+      this.validators.delete(key);
+      // TODO: clear validation status
+    }
   }
 }
 
