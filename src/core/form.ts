@@ -25,6 +25,7 @@ export class FormField<T> implements Field<T> {
   private customErrors: FieldErrors;
 
   private validators: Map<string, Validator<T>>;
+  private validationStatuses: Map<string, ValidationStatus>;
 
   private snapshot: FieldSnapshot<T>;
 
@@ -39,6 +40,7 @@ export class FormField<T> implements Field<T> {
     this.customErrors = {};
 
     this.validators = new Map();
+    this.validationStatuses = new Map();
 
     this.snapshot = {
       defaultValue: params.defaultValue,
@@ -58,7 +60,11 @@ export class FormField<T> implements Field<T> {
   }
 
   private isPending(): boolean {
-    // TODO: derive from validation statuses
+    for (const status of this.validationStatuses.values()) {
+      if (status.type === "pending") {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -82,8 +88,10 @@ export class FormField<T> implements Field<T> {
       return;
     }
     this.isDispatchQueued = true;
+
     window.queueMicrotask(() => {
       this.isDispatchQueued = false;
+
       const snapshot = this.snapshot;
       for (const subscriber of [...this.subscribers]) {
         try {
@@ -109,6 +117,7 @@ export class FormField<T> implements Field<T> {
       return;
     }
     this.snapshot = { ...this.snapshot, value };
+    this.runAllValidators();
     this.queueDispatch();
   }
 
@@ -156,7 +165,6 @@ export class FormField<T> implements Field<T> {
 
   setValue(value: T): void {
     this._setValue(value);
-    // TODO: run validators
   }
 
   setTouched(): void {
@@ -180,7 +188,7 @@ export class FormField<T> implements Field<T> {
       throw new Error(`FormField '${this.path}' already has a validator '${key}'`);
     }
     this.validators.set(key, validator);
-    // TODO: run validator
+    this.runValidator(key);
     return () => {
       this.removeValidator(key, validator);
     };
@@ -189,7 +197,64 @@ export class FormField<T> implements Field<T> {
   private removeValidator(key: string, validator: Validator<T>): void {
     if (this.validators.get(key) === validator) {
       this.validators.delete(key);
-      // TODO: clear validation status
+
+      this.abortPendingValidation(key);
+      this.validationStatuses.delete(key);
+
+      const { [key]: _, ...errors } = this.validationErrors;
+      this.validationErrors = errors;
+
+      this.updateErrors();
+      this.updateIsPending();
+    }
+  }
+
+  private runValidator(key: string): void {
+    const validator = this.validators.get(key);
+    if (!validator) {
+      return;
+    }
+
+    this.abortPendingValidation(key);
+
+    const requestId = `ValidationRequest/${uniqueId()}`;
+    const controller = new window.AbortController();
+    this.validationStatuses.set(key, { type: "pending", requestId, controller });
+
+    validator({
+      id: requestId,
+      onetime: false,
+      value: this.snapshot.value,
+      resolve: error => {
+        this.resolveValidation(key, requestId, error);
+      },
+      signal: controller.signal,
+    });
+
+    this.updateIsPending();
+  }
+
+  private runAllValidators(): void {
+    for (const key of this.validators.keys()) {
+      this.runValidator(key);
+    }
+  }
+
+  private abortPendingValidation(key: string): void {
+    const status = this.validationStatuses.get(key);
+    if (status && status.type === "pending") {
+      status.controller.abort();
+    }
+  }
+
+  private resolveValidation(key: string, requestId: string, error: unknown): void {
+    const status = this.validationStatuses.get(key);
+    if (status && status.type === "pending" && status.requestId === requestId) {
+      this.validationErrors = { ...this.validationErrors, [key]: error };
+      this.validationStatuses.set(key, { type: "done" });
+
+      this.updateErrors();
+      this.updateIsPending();
     }
   }
 }
@@ -205,3 +270,7 @@ function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
   }
   return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
 }
+
+type ValidationStatus =
+  | Readonly<{ type: "pending"; requestId: string; controller: AbortController }>
+  | Readonly<{ type: "done" }>;

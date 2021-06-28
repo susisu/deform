@@ -1,4 +1,5 @@
 import { waitForMicrotasks } from "../__tests__/utils";
+import { ValidationRequest, Validator } from "./field";
 import { FormField } from "./form";
 
 describe("FormField", () => {
@@ -243,11 +244,331 @@ describe("FormField", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
     });
 
-    // TODO
-    it.todo("overrides validation errors");
+    it("overrides validation errors", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const validator: Validator<number> = ({ resolve }) => {
+        resolve(true);
+      };
+      field.addValidator("foo", validator);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true } })
+      );
+
+      field.setCustomErrors({ foo: false });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: false } })
+      );
+
+      // removing custom errors restores the validation errors
+      field.setCustomErrors({});
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true } })
+      );
+    });
   });
 
   describe("#addValidator", () => {
+    it("attaches a validator to the field and calls it with the current value", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: true })
+      );
+
+      validator.mock.calls[0][0].resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      // creates a new validation request when 'value' is changed
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: true })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true }, isPending: true })
+      );
+
+      validator.mock.calls[1][0].resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(4);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+    });
+
+    it("aborts the pending validation request when a new request is created", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      const onAbort = jest.fn(() => {});
+      validator.mock.calls[0][0].signal.addEventListener("abort", onAbort);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: true })
+      );
+
+      expect(onAbort).toHaveBeenCalledTimes(0);
+
+      // creates a new validation request when 'value' is changed
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 1,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+      expect(onAbort).toHaveBeenCalledTimes(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: true })
+      );
+
+      validator.mock.calls[1][0].resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+
+      // resolving an aborted request has no effect
+      validator.mock.calls[0][0].resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+    });
+
+    it("cleans up the error when a validator is removed", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      const removeValidator = field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: true })
+      );
+
+      validator.mock.calls[0][0].resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      removeValidator();
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+    });
+
+    it("cleans up the pending validation request when a validator is removed", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      const removeValidator = field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(validator).toHaveBeenLastCalledWith({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      const onAbort = jest.fn(() => {});
+      validator.mock.calls[0][0].signal.addEventListener("abort", onAbort);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: true })
+      );
+
+      expect(onAbort).toHaveBeenCalledTimes(0);
+      removeValidator();
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+      expect(onAbort).toHaveBeenCalledTimes(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      // resolving an aborted request has no effect
+      validator.mock.calls[0][0].resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+    });
+
     it("throws error if the field already has a validator with the same key", () => {
       const field = new FormField({
         path: "$root.test",
