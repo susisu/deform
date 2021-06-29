@@ -195,14 +195,6 @@ export class FormField<T> implements Field<T> {
     this.updateErrors();
   }
 
-  reset(): void {
-    this.setValue(this.snapshot.defaultValue);
-    this.setIsTouched(false);
-    this.setIsDirty(false);
-    this.setValidationErrors({});
-    this.setCustomErrors({});
-  }
-
   addValidator(name: string, validator: Validator<T>): Disposable {
     if (this.validators.has(name)) {
       throw new Error(`FormField '${this.path}' already has a validator named '${name}'`);
@@ -337,6 +329,14 @@ export class FormField<T> implements Field<T> {
         this.runValidatorOnce(name, value, signal).then(error => [name, error] as const)
       )
     ).then(entries => Object.fromEntries(entries));
+  }
+
+  reset(): void {
+    this.setValue(this.snapshot.defaultValue);
+    this.setIsTouched(false);
+    this.setIsDirty(false);
+    this.setValidationErrors({});
+    this.setCustomErrors({});
   }
 }
 
