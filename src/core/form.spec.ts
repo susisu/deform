@@ -161,25 +161,12 @@ describe("FormField", () => {
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request1).toEqual(expect.objectContaining({ value: 42 }));
 
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 1,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
-      expect(request2.id).not.toBe(request1.id);
+      expect(request2).toEqual(expect.objectContaining({ value: 1 }));
     });
   });
 
@@ -341,12 +328,7 @@ describe("FormField", () => {
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       request1.resolve(true);
-      expect(request1).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: 1,
-        })
-      );
+      expect(request1).toEqual(expect.objectContaining({ value: 1 }));
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 1,
@@ -362,12 +344,7 @@ describe("FormField", () => {
       field.reset();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: 0,
-        })
-      );
+      expect(request2).toEqual(expect.objectContaining({ value: 0 }));
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
@@ -490,13 +467,7 @@ describe("FormField", () => {
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request1).toEqual(expect.objectContaining({ value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       const onAbort = jest.fn(() => {});
@@ -515,14 +486,7 @@ describe("FormField", () => {
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 1,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
-      expect(request2.id).not.toBe(request1.id);
+      expect(request2).toEqual(expect.objectContaining({ value: 1 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
       expect(onAbort).toHaveBeenCalledTimes(1);
 
@@ -573,13 +537,7 @@ describe("FormField", () => {
       const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
-      expect(request).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request).toEqual(expect.objectContaining({ value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -631,13 +589,7 @@ describe("FormField", () => {
       const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
-      expect(request).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request).toEqual(expect.objectContaining({ value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       const onAbort = jest.fn(() => {});
@@ -858,13 +810,7 @@ describe("FormField", () => {
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request1).toEqual(expect.objectContaining({ onetime: false, value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       request1.resolve(true);
@@ -880,14 +826,7 @@ describe("FormField", () => {
       const promise = field.validateOnce(1);
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: true,
-        value: 1,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
-      expect(request2.id).not.toBe(request1.id);
+      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 1 }));
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
       );
@@ -921,13 +860,7 @@ describe("FormField", () => {
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request1).toEqual(expect.objectContaining({ onetime: false, value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       request1.resolve(true);
@@ -939,14 +872,7 @@ describe("FormField", () => {
       const promise = field.validateOnce(1, { signal: controller.signal });
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: true,
-        value: 1,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
-      expect(request2.id).not.toBe(request1.id);
+      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 1 }));
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
@@ -975,13 +901,7 @@ describe("FormField", () => {
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual({
-        id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
-        value: 42,
-        resolve: expect.any(Function),
-        signal: expect.any(window.AbortSignal),
-      });
+      expect(request1).toEqual(expect.objectContaining({ onetime: false, value: 42 }));
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
       request1.resolve(true);
