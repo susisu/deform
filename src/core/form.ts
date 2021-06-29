@@ -224,6 +224,7 @@ export class FormField<T> implements Field<T> {
   private runValidator(name: string): void {
     const validator = this.validators.get(name);
     if (!validator) {
+      // NEVER COMES HERE
       // eslint-disable-next-line no-console
       console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
       return;
@@ -295,11 +296,13 @@ export class FormField<T> implements Field<T> {
 
   private async runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
     if (signal.aborted) {
+      // NEVER COMES HERE
       throw new Error("Aborted");
     }
 
     const validator = this.validators.get(name);
     if (!validator) {
+      // NEVER COMES HERE
       // eslint-disable-next-line no-console
       console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
       return undefined;
