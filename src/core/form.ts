@@ -112,7 +112,7 @@ export class FormField<T> implements Field<T> {
     });
   }
 
-  private _setDefaultValue(defaultValue: T): void {
+  private setDefaultValue(defaultValue: T): void {
     if (Object.is(this.snapshot.defaultValue, defaultValue)) {
       return;
     }
@@ -120,7 +120,7 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setValue(value: T): void {
+  setValue(value: T): void {
     if (Object.is(this.snapshot.value, value)) {
       return;
     }
@@ -129,7 +129,7 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setIsTouched(isTouched: boolean): void {
+  private setIsTouched(isTouched: boolean): void {
     if (this.snapshot.isTouched === isTouched) {
       return;
     }
@@ -137,7 +137,11 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setIsDirty(isDirty: boolean): void {
+  setTouched(): void {
+    this.setIsTouched(true);
+  }
+
+  private setIsDirty(isDirty: boolean): void {
     if (this.snapshot.isDirty === isDirty) {
       return;
     }
@@ -145,7 +149,11 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setErrors(errors: FieldErrors): void {
+  setDirty(): void {
+    this.setIsDirty(true);
+  }
+
+  private setErrors(errors: FieldErrors): void {
     if (isEqualErrors(this.snapshot.errors, errors)) {
       return;
     }
@@ -153,7 +161,7 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private _setIsPending(isPending: boolean): void {
+  private setIsPending(isPending: boolean): void {
     if (this.snapshot.isPending === isPending) {
       return;
     }
@@ -163,24 +171,12 @@ export class FormField<T> implements Field<T> {
 
   private updateErrors(): void {
     const errors = this.errors();
-    this._setErrors(errors);
+    this.setErrors(errors);
   }
 
   private updateIsPending(): void {
     const isPending = this.isPending();
-    this._setIsPending(isPending);
-  }
-
-  setValue(value: T): void {
-    this._setValue(value);
-  }
-
-  setTouched(): void {
-    this._setIsTouched(true);
-  }
-
-  setDirty(): void {
-    this._setIsDirty(true);
+    this.setIsPending(isPending);
   }
 
   setCustomErrors(errors: FieldErrors): void {
