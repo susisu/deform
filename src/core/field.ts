@@ -8,6 +8,7 @@ export interface Field<T> {
   setTouched(): void;
   setDirty(): void;
   setCustomErrors(errors: FieldErrors): void;
+  reset(): void;
   addValidator(name: string, validator: Validator<T>): Disposable;
   validate(): void;
   validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors>;

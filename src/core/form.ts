@@ -179,12 +179,28 @@ export class FormField<T> implements Field<T> {
     this.setIsPending(isPending);
   }
 
+  private setValidationErrors(errors: FieldErrors): void {
+    if (isEqualErrors(this.validationErrors, errors)) {
+      return;
+    }
+    this.validationErrors = errors;
+    this.updateErrors();
+  }
+
   setCustomErrors(errors: FieldErrors): void {
     if (isEqualErrors(this.customErrors, errors)) {
       return;
     }
     this.customErrors = errors;
     this.updateErrors();
+  }
+
+  reset(): void {
+    this.setValue(this.snapshot.defaultValue);
+    this.setIsTouched(false);
+    this.setIsDirty(false);
+    this.setValidationErrors({});
+    this.setCustomErrors({});
   }
 
   addValidator(name: string, validator: Validator<T>): Disposable {
@@ -204,12 +220,10 @@ export class FormField<T> implements Field<T> {
 
       this.abortPendingValidation(name);
       this.validationStatuses.delete(name);
+      this.updateIsPending();
 
       const { [name]: _, ...errors } = this.validationErrors;
-      this.validationErrors = errors;
-
-      this.updateErrors();
-      this.updateIsPending();
+      this.setValidationErrors(errors);
     }
   }
 
@@ -231,6 +245,7 @@ export class FormField<T> implements Field<T> {
     const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
     this.validationStatuses.set(name, { type: "pending", requestId, controller });
+    this.updateIsPending();
 
     validator({
       id: requestId,
@@ -243,8 +258,6 @@ export class FormField<T> implements Field<T> {
       },
       signal: controller.signal,
     });
-
-    this.updateIsPending();
   }
 
   private runAllValidators(): void {
@@ -263,10 +276,8 @@ export class FormField<T> implements Field<T> {
   private resolveValidation(name: string, requestId: string, error: unknown): void {
     const status = this.validationStatuses.get(name);
     if (status && status.type === "pending" && status.requestId === requestId) {
-      this.validationErrors = { ...this.validationErrors, [name]: error };
+      this.setValidationErrors({ ...this.validationErrors, [name]: error });
       this.validationStatuses.set(name, { type: "done" });
-
-      this.updateErrors();
       this.updateIsPending();
     }
   }

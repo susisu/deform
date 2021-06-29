@@ -325,6 +325,72 @@ describe("FormField", () => {
     });
   });
 
+  describe("#reset", () => {
+    it("resets the state of the field", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      field.setValue(1);
+      field.setTouched();
+      field.setDirty();
+      field.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      request1.resolve(true);
+      expect(request1).toEqual(
+        expect.objectContaining({
+          onetime: false,
+          value: 1,
+        })
+      );
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 1,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(
+        expect.objectContaining({
+          onetime: false,
+          value: 0,
+        })
+      );
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+    });
+  });
+
   describe("#addValidator", () => {
     it("attaches a validator to the field", async () => {
       const field = new FormField({
