@@ -61,10 +61,10 @@ export class FormField<T> implements Field<T> {
   }
 
   private errors(): FieldErrors {
-    return {
-      ...this.validationErrors,
-      ...this.customErrors,
-    };
+    return mergeErrors({
+      validationErrors: this.validationErrors,
+      customErrors: this.customErrors,
+    });
   }
 
   private isPending(): boolean {
@@ -284,10 +284,7 @@ export class FormField<T> implements Field<T> {
     }
     const customErrors = this.customErrors;
     const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
-    return {
-      ...validationErrors,
-      ...customErrors,
-    };
+    return mergeErrors({ validationErrors, customErrors });
   }
 
   private async runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
@@ -342,6 +339,18 @@ function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
     return false;
   }
   return aNames.every((name, i) => bNames[i] === name && Object.is(a[name], b[name]));
+}
+
+type MergeErrorsParams = Readonly<{
+  validationErrors: FieldErrors;
+  customErrors: FieldErrors;
+}>;
+
+function mergeErrors(params: MergeErrorsParams): FieldErrors {
+  return {
+    ...params.validationErrors,
+    ...params.customErrors,
+  };
 }
 
 type ValidationStatus =
