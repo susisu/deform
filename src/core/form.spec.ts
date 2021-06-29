@@ -841,7 +841,7 @@ describe("FormField", () => {
       await expect(promise).resolves.toEqual({ foo: true, bar: true });
     });
 
-    it("can be aborted using AbortSignal", async () => {
+    it("is aborted when the signal is aborted", async () => {
       const field = new FormField({
         path: "$root.test",
         defaultValue: 0,
@@ -891,6 +891,42 @@ describe("FormField", () => {
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
+
+      await expect(promise).rejects.toThrowError("Aborted");
+    });
+
+    it("is aborted if the signal has already been aborted", async () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      const controller = new window.AbortController();
+      controller.abort();
+      const promise = field.validateOnce(1, { signal: controller.signal });
+      expect(validator).toHaveBeenCalledTimes(1);
 
       await expect(promise).rejects.toThrowError("Aborted");
     });

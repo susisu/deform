@@ -240,7 +240,9 @@ export class FormField<T> implements Field<T> {
       onetime: false,
       value: this.snapshot.value,
       resolve: error => {
-        this.resolveValidation(name, requestId, error);
+        if (!controller.signal.aborted) {
+          this.resolveValidation(name, requestId, error);
+        }
       },
       signal: controller.signal,
     });
@@ -276,6 +278,9 @@ export class FormField<T> implements Field<T> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
+      if (signal.aborted) {
+        throw new Error("Aborted");
+      }
       signal.addEventListener("abort", () => {
         controller.abort();
       });
@@ -288,12 +293,16 @@ export class FormField<T> implements Field<T> {
     };
   }
 
-  private runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
+  private async runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
+    if (signal.aborted) {
+      throw new Error("Aborted");
+    }
+
     const validator = this.validators.get(name);
     if (!validator) {
       // eslint-disable-next-line no-console
       console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
-      return Promise.resolve(undefined);
+      return undefined;
     }
 
     return new Promise<unknown>((resolve, reject) => {
@@ -315,7 +324,7 @@ export class FormField<T> implements Field<T> {
     });
   }
 
-  private runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
+  private async runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
     return Promise.all(
       [...this.validators.keys()].map(name =>
         this.runValidatorOnce(name, value, signal).then(error => [name, error] as const)
