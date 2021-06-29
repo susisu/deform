@@ -916,5 +916,42 @@ describe("FormField", () => {
         isPending: true,
       });
     });
+
+    it("accepts immediate validation errors after resetting", () => {
+      const field = new FormField({
+        path: "$root.test",
+        defaultValue: 0,
+        value: 42,
+      });
+      field.setValue(1);
+      field.setTouched();
+      field.setDirty();
+      field.setCustomErrors({ foo: true });
+      const validator: Validator<number> = ({ resolve }) => {
+        resolve(true);
+      };
+      field.addValidator("bar", validator);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 1,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.reset();
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: true },
+        isPending: false,
+      });
+    });
   });
 });

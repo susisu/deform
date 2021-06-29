@@ -332,11 +332,12 @@ export class FormField<T> implements Field<T> {
   }
 
   reset(): void {
-    this.setValue(this.snapshot.defaultValue);
     this.setIsTouched(false);
     this.setIsDirty(false);
     this.setValidationErrors({});
     this.setCustomErrors({});
+    // set the value at the last so that validation errors are not cleared
+    this.setValue(this.snapshot.defaultValue);
   }
 }
 
