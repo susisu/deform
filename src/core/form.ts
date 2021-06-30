@@ -29,6 +29,11 @@ export class FormField<T> implements Field<T> {
   private subscribers: Set<FieldSubscriber<T>>;
   private isDispatchQueued: boolean;
 
+  private defaultValue: T;
+  private value: T;
+  private isTouched: boolean;
+  private isDirty: boolean;
+
   private validationErrors: FieldErrors;
   private customErrors: FieldErrors;
 
@@ -44,6 +49,11 @@ export class FormField<T> implements Field<T> {
     this.subscribers = new Set();
     this.isDispatchQueued = false;
 
+    this.defaultValue = params.defaultValue;
+    this.value = params.value;
+    this.isTouched = false;
+    this.isDirty = false;
+
     this.validationErrors = {};
     this.customErrors = {};
 
@@ -51,23 +61,39 @@ export class FormField<T> implements Field<T> {
     this.validationStatuses = new Map();
 
     this.snapshot = {
-      defaultValue: params.defaultValue,
-      value: params.value,
-      isTouched: false,
-      isDirty: false,
-      errors: this.errors(),
-      isPending: this.isPending(),
+      defaultValue: this.getDefaultValue(),
+      value: this.getValue(),
+      isTouched: this.getIsTouched(),
+      isDirty: this.getIsDirty(),
+      errors: this.getErrors(),
+      isPending: this.getIsPending(),
     };
   }
 
-  private errors(): FieldErrors {
+  private getDefaultValue(): T {
+    return this.defaultValue;
+  }
+
+  private getValue(): T {
+    return this.value;
+  }
+
+  private getIsTouched(): boolean {
+    return this.isTouched;
+  }
+
+  private getIsDirty(): boolean {
+    return this.isDirty;
+  }
+
+  private getErrors(): FieldErrors {
     return mergeErrors({
       validationErrors: this.validationErrors,
       customErrors: this.customErrors,
     });
   }
 
-  private isPending(): boolean {
+  private getIsPending(): boolean {
     for (const status of this.validationStatuses.values()) {
       if (status.type === "pending") {
         return true;
@@ -112,7 +138,8 @@ export class FormField<T> implements Field<T> {
     });
   }
 
-  private setDefaultValue(defaultValue: T): void {
+  private updateSnapshotDefaultValue(): void {
+    const defaultValue = this.getDefaultValue();
     if (Object.is(this.snapshot.defaultValue, defaultValue)) {
       return;
     }
@@ -120,16 +147,17 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  setValue(value: T): void {
+  private updateSnapshotValue(): void {
+    const value = this.getValue();
     if (Object.is(this.snapshot.value, value)) {
       return;
     }
     this.snapshot = { ...this.snapshot, value };
-    this.runAllValidators();
     this.queueDispatch();
   }
 
-  private setIsTouched(isTouched: boolean): void {
+  private updateSnapshotIsTouched(): void {
+    const isTouched = this.getIsTouched();
     if (this.snapshot.isTouched === isTouched) {
       return;
     }
@@ -137,11 +165,8 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  setTouched(): void {
-    this.setIsTouched(true);
-  }
-
-  private setIsDirty(isDirty: boolean): void {
+  private updateSnapshotIsDirty(): void {
+    const isDirty = this.getIsDirty();
     if (this.snapshot.isDirty === isDirty) {
       return;
     }
@@ -149,11 +174,8 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  setDirty(): void {
-    this.setIsDirty(true);
-  }
-
-  private setErrors(errors: FieldErrors): void {
+  private updateSnapshotErrors(): void {
+    const errors = this.getErrors();
     if (isEqualErrors(this.snapshot.errors, errors)) {
       return;
     }
@@ -161,7 +183,8 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private setIsPending(isPending: boolean): void {
+  private updateSnapshotIsPending(): void {
+    const isPending = this.getIsPending();
     if (this.snapshot.isPending === isPending) {
       return;
     }
@@ -169,14 +192,29 @@ export class FormField<T> implements Field<T> {
     this.queueDispatch();
   }
 
-  private updateErrors(): void {
-    const errors = this.errors();
-    this.setErrors(errors);
+  setValue(value: T): void {
+    if (Object.is(this.value, value)) {
+      return;
+    }
+    this.value = value;
+    this.updateSnapshotValue();
+    this.runAllValidators();
   }
 
-  private updateIsPending(): void {
-    const isPending = this.isPending();
-    this.setIsPending(isPending);
+  setTouched(): void {
+    if (this.isTouched) {
+      return;
+    }
+    this.isTouched = true;
+    this.updateSnapshotIsTouched();
+  }
+
+  setDirty(): void {
+    if (this.isDirty) {
+      return;
+    }
+    this.isDirty = true;
+    this.updateSnapshotIsDirty();
   }
 
   private setValidationErrors(errors: FieldErrors): void {
@@ -184,7 +222,7 @@ export class FormField<T> implements Field<T> {
       return;
     }
     this.validationErrors = errors;
-    this.updateErrors();
+    this.updateSnapshotErrors();
   }
 
   setCustomErrors(errors: FieldErrors): void {
@@ -192,7 +230,7 @@ export class FormField<T> implements Field<T> {
       return;
     }
     this.customErrors = errors;
-    this.updateErrors();
+    this.updateSnapshotErrors();
   }
 
   addValidator(name: string, validator: Validator<T>): Disposable {
@@ -212,7 +250,7 @@ export class FormField<T> implements Field<T> {
 
       this.abortPendingValidation(name);
       this.validationStatuses.delete(name);
-      this.updateIsPending();
+      this.updateSnapshotIsPending();
 
       const { [name]: _, ...errors } = this.validationErrors;
       this.setValidationErrors(errors);
@@ -237,12 +275,12 @@ export class FormField<T> implements Field<T> {
     const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
     this.validationStatuses.set(name, { type: "pending", requestId, controller });
-    this.updateIsPending();
+    this.updateSnapshotIsPending();
 
     validator({
       id: requestId,
       onetime: false,
-      value: this.snapshot.value,
+      value: this.value,
       resolve: error => {
         if (!controller.signal.aborted) {
           this.resolveValidation(name, requestId, error);
@@ -270,7 +308,7 @@ export class FormField<T> implements Field<T> {
     if (status && status.type === "pending" && status.requestId === requestId) {
       this.setValidationErrors({ ...this.validationErrors, [name]: error });
       this.validationStatuses.set(name, { type: "done" });
-      this.updateIsPending();
+      this.updateSnapshotIsPending();
     }
   }
 

@@ -167,6 +167,10 @@ describe("FormField", () => {
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual(expect.objectContaining({ value: 1 }));
+
+      // does nothing if the same value is already set
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(2);
     });
   });
 
