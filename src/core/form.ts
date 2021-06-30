@@ -330,15 +330,6 @@ export class FormField<T> implements Field<T> {
       )
     ).then(entries => Object.fromEntries(entries));
   }
-
-  reset(): void {
-    this.setIsTouched(false);
-    this.setIsDirty(false);
-    this.setValidationErrors({});
-    this.setCustomErrors({});
-    // set the value at the last so that validation errors are not cleared
-    this.setValue(this.snapshot.defaultValue);
-  }
 }
 
 function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
