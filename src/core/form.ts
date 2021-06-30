@@ -26,9 +26,6 @@ export class FormField<T> implements Field<T> {
   readonly id: string;
   readonly path: string;
 
-  private subscribers: Set<FieldSubscriber<T>>;
-  private isDispatchQueued: boolean;
-
   private defaultValue: T;
   private value: T;
   private isTouched: boolean;
@@ -41,13 +38,12 @@ export class FormField<T> implements Field<T> {
   private validationStatuses: Map<string, ValidationStatus>;
 
   private snapshot: FieldSnapshot<T>;
+  private subscribers: Set<FieldSubscriber<T>>;
+  private isDispatchQueued: boolean;
 
   constructor(params: FormFieldParams<T>) {
     this.id = `FormField/${uniqueId()}`;
     this.path = params.path;
-
-    this.subscribers = new Set();
-    this.isDispatchQueued = false;
 
     this.defaultValue = params.defaultValue;
     this.value = params.value;
@@ -68,6 +64,8 @@ export class FormField<T> implements Field<T> {
       errors: this.getErrors(),
       isPending: this.getIsPending(),
     };
+    this.subscribers = new Set();
+    this.isDispatchQueued = false;
   }
 
   private getDefaultValue(): T {
