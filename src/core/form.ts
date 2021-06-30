@@ -257,10 +257,6 @@ export class FormField<T> implements Field<T> {
     }
   }
 
-  validate(): void {
-    this.runAllValidators();
-  }
-
   private runValidator(name: string): void {
     const validator = this.validators.get(name);
     if (!validator) {
@@ -290,12 +286,6 @@ export class FormField<T> implements Field<T> {
     });
   }
 
-  private runAllValidators(): void {
-    for (const name of this.validators.keys()) {
-      this.runValidator(name);
-    }
-  }
-
   private abortPendingValidation(name: string): void {
     const status = this.validationStatuses.get(name);
     if (status && status.type === "pending") {
@@ -312,20 +302,14 @@ export class FormField<T> implements Field<T> {
     }
   }
 
-  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
-    const signal = options?.signal;
-    const controller = new window.AbortController();
-    if (signal) {
-      if (signal.aborted) {
-        throw new Error("Aborted");
-      }
-      signal.addEventListener("abort", () => {
-        controller.abort();
-      });
+  private runAllValidators(): void {
+    for (const name of this.validators.keys()) {
+      this.runValidator(name);
     }
-    const customErrors = this.customErrors;
-    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
-    return mergeErrors({ validationErrors, customErrors });
+  }
+
+  validate(): void {
+    this.runAllValidators();
   }
 
   private async runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
@@ -367,6 +351,22 @@ export class FormField<T> implements Field<T> {
         this.runValidatorOnce(name, value, signal).then(error => [name, error] as const)
       )
     ).then(entries => Object.fromEntries(entries));
+  }
+
+  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
+    const signal = options?.signal;
+    const controller = new window.AbortController();
+    if (signal) {
+      if (signal.aborted) {
+        throw new Error("Aborted");
+      }
+      signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
+    const customErrors = this.customErrors;
+    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
+    return mergeErrors({ validationErrors, customErrors });
   }
 }
 
