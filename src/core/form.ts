@@ -180,7 +180,7 @@ export class FormField<T> implements Field<T> {
   }
 
   private setValidationErrors(errors: FieldErrors): void {
-    if (isEqualErrors(this.validationErrors, errors)) {
+    if (this.validationErrors === errors) {
       return;
     }
     this.validationErrors = errors;
@@ -188,7 +188,7 @@ export class FormField<T> implements Field<T> {
   }
 
   setCustomErrors(errors: FieldErrors): void {
-    if (isEqualErrors(this.customErrors, errors)) {
+    if (this.customErrors === errors) {
       return;
     }
     this.customErrors = errors;
