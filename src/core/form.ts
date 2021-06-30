@@ -1,7 +1,8 @@
 import {
+  ChildKeyOf,
   Disposable,
-  Field,
   FieldErrors,
+  FieldNode,
   FieldSnapshot,
   FieldSubscriber,
   ValidateOnceOptions,
@@ -22,7 +23,7 @@ export type FormFieldParams<T> = Readonly<{
   value: T;
 }>;
 
-export class FormField<T> implements Field<T> {
+export class FormField<T> implements FieldNode<T> {
   readonly id: string;
   readonly path: string;
 
@@ -365,6 +366,14 @@ export class FormField<T> implements Field<T> {
     const customErrors = this.customErrors;
     const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
     return mergeErrors({ validationErrors, customErrors });
+  }
+
+  connect(): Disposable {
+    throw new Error("not implemented");
+  }
+
+  createChild<K extends ChildKeyOf<T>>(_key: K): FieldNode<T[K]> {
+    throw new Error("not implemented");
   }
 }
 

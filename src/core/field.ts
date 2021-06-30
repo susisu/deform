@@ -44,3 +44,17 @@ export function isValid(errors: FieldErrors): boolean {
   const names = Object.keys(errors);
   return names.every(name => !errors[name]);
 }
+
+export interface FieldNode<T> extends Field<T> {
+  connect(): Disposable;
+  createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]>;
+}
+
+export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
+
+type NonIndexKey<K extends string | number | symbol> =
+  // prettier-ignore
+  string extends K ? never
+  : number extends K ? never
+  : symbol extends K ? never
+  : K;
