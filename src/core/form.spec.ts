@@ -28,17 +28,6 @@ describe("FormField", () => {
     });
   });
 
-  describe("#path", () => {
-    it("is set by the parameter", () => {
-      const field = new FormField({
-        path: "$root",
-        defaultValue: 0,
-        value: 42,
-      });
-      expect(field.path).toBe("$root");
-    });
-  });
-
   describe("#getSnapshot", () => {
     it("gets the latest snapshot of the field's state", () => {
       const field = new FormField({

@@ -26,7 +26,7 @@ export type FormFieldParams<T> = Readonly<{
 
 export class FormField<T> implements FieldNode<T> {
   readonly id: string;
-  readonly path: string;
+  private path: string;
 
   private parent: Parent<T> | undefined;
   private children: Map<ChildKeyOf<T>, Child<T>>;
