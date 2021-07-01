@@ -5,6 +5,7 @@ import {
   FieldNode,
   FieldSnapshot,
   FieldSubscriber,
+  isValid,
   ValidateOnceOptions,
   Validator,
 } from "./field";
@@ -43,6 +44,11 @@ export class FormField<T> implements FieldNode<T> {
   private validators: Map<string, Validator<T>>;
   private validationStatuses: Map<string, ValidationStatus>;
 
+  private touchedChildKeys: Set<ChildKeyOf<T>>;
+  private dirtyChildKeys: Set<ChildKeyOf<T>>;
+  private childrenErrors: Map<ChildKeyOf<T>, FieldErrors>;
+  private pendingChildKeys: Set<ChildKeyOf<T>>;
+
   private snapshot: FieldSnapshot<T>;
   private subscribers: Set<FieldSubscriber<T>>;
   private isDispatchQueued: boolean;
@@ -66,6 +72,11 @@ export class FormField<T> implements FieldNode<T> {
     this.validators = new Map();
     this.validationStatuses = new Map();
 
+    this.touchedChildKeys = new Set();
+    this.dirtyChildKeys = new Set();
+    this.childrenErrors = new Map();
+    this.pendingChildKeys = new Set();
+
     this.snapshot = {
       defaultValue: this.calcSnapshotDefaultValue(),
       value: this.calcSnapshotValue(),
@@ -78,30 +89,43 @@ export class FormField<T> implements FieldNode<T> {
     this.isDispatchQueued = false;
   }
 
+  // depends on: defaultValue
   private calcSnapshotDefaultValue(): T {
     return this.defaultValue;
   }
 
+  // depends on: value
   private calcSnapshotValue(): T {
     return this.value;
   }
 
+  // depends on: isTouched, touchedChildKeys
   private calcSnapshotIsTouched(): boolean {
-    return this.isTouched;
+    return this.isTouched || this.touchedChildKeys.size > 0;
   }
 
+  // depends on: isDirty, dirtyChildKeys
   private calcSnapshotIsDirty(): boolean {
-    return this.isDirty;
+    return this.isDirty || this.dirtyChildKeys.size > 0;
   }
 
+  // depends on: childrenErrors, validationErrors, customErrors
   private calcSnapshotErrors(): FieldErrors {
+    const childrenErrors = Object.fromEntries(
+      [...this.childrenErrors].map(([key, errors]) => [key, !isValid(errors)])
+    );
     return mergeErrors({
+      childrenErrors,
       validationErrors: this.validationErrors,
       customErrors: this.customErrors,
     });
   }
 
+  // depends on: pendingChildKeys, validationStatuses
   private calcSnapshotIsPending(): boolean {
+    if (this.pendingChildKeys.size > 0) {
+      return true;
+    }
     for (const status of this.validationStatuses.values()) {
       if (status.type === "pending") {
         return true;
@@ -271,6 +295,7 @@ export class FormField<T> implements FieldNode<T> {
   private removeValidator(key: string, validator: Validator<T>): void {
     if (this.validators.get(key) === validator) {
       this.abortPendingValidation(key);
+
       this.validationStatuses.delete(key);
       this.updateSnapshotIsPending();
 
@@ -390,8 +415,9 @@ export class FormField<T> implements FieldNode<T> {
       });
     }
     const customErrors = this.customErrors;
+    const childrenErrors = {}; // TODO
     const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
-    return mergeErrors({ validationErrors, customErrors });
+    return mergeErrors({ childrenErrors, validationErrors, customErrors });
   }
 
   connect(): Disposable {
@@ -403,6 +429,7 @@ export class FormField<T> implements FieldNode<T> {
     this.parent.setIsTouched(this.snapshot.isTouched);
     this.parent.setIsDirty(this.snapshot.isDirty);
     this.parent.setErrors(this.snapshot.errors);
+    this.parent.setIsPending(this.snapshot.isPending);
     return () => {
       this.disconnect();
     };
@@ -450,22 +477,50 @@ export class FormField<T> implements FieldNode<T> {
         this.detachChild(key, child);
       },
       setDefaultValue: defaultValue => {
-        this.setDefaultValue(setter(this.defaultValue, defaultValue));
+        if (this.children.get(key) === child) {
+          this.setDefaultValue(setter(this.defaultValue, defaultValue));
+        }
       },
       setValue: value => {
-        this.setValue(setter(this.value, value));
+        if (this.children.get(key) === child) {
+          this.setValue(setter(this.value, value));
+        }
       },
-      setIsTouched: _isTouched => {
-        // TODO
+      setIsTouched: isTouched => {
+        if (this.children.get(key) === child) {
+          if (isTouched) {
+            this.touchedChildKeys.add(key);
+          } else {
+            this.touchedChildKeys.delete(key);
+          }
+          this.updateSnapshotIsTouched();
+        }
       },
-      setIsDirty: _isDirty => {
-        // TODO
+      setIsDirty: isDirty => {
+        if (this.children.get(key) === child) {
+          if (isDirty) {
+            this.dirtyChildKeys.add(key);
+          } else {
+            this.dirtyChildKeys.delete(key);
+          }
+          this.updateSnapshotIsDirty();
+        }
       },
-      setErrors: _errors => {
-        // TODO
+      setErrors: errors => {
+        if (this.children.get(key) === child) {
+          this.childrenErrors.set(key, errors);
+          this.updateSnapshotErrors();
+        }
       },
-      setIsPending: _isPending => {
-        // TODO
+      setIsPending: isPending => {
+        if (this.children.get(key) === child) {
+          if (isPending) {
+            this.pendingChildKeys.add(key);
+          } else {
+            this.pendingChildKeys.delete(key);
+          }
+          this.updateSnapshotIsPending();
+        }
       },
     };
   }
@@ -473,10 +528,14 @@ export class FormField<T> implements FieldNode<T> {
   private toChild<PT>(getter: Getter<PT, T>): Child<PT> {
     return {
       setDefaultValue: defaultValue => {
-        this.setDefaultValue(getter(defaultValue));
+        if (this.isConnected) {
+          this.setDefaultValue(getter(defaultValue));
+        }
       },
       setValue: value => {
-        this.setValue(getter(value));
+        if (this.isConnected) {
+          this.setValue(getter(value));
+        }
       },
       validate: () => {
         throw new Error("not implemented");
@@ -501,7 +560,18 @@ export class FormField<T> implements FieldNode<T> {
 
   private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
     if (this.children.get(key) === child) {
-      // TODO: cleanup
+      this.touchedChildKeys.delete(key);
+      this.updateSnapshotIsTouched();
+
+      this.dirtyChildKeys.delete(key);
+      this.updateSnapshotIsDirty();
+
+      this.childrenErrors.delete(key);
+      this.updateSnapshotErrors();
+
+      this.pendingChildKeys.delete(key);
+      this.updateSnapshotIsPending();
+
       this.children.delete(key);
     }
   }
@@ -568,12 +638,14 @@ function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
 }
 
 type MergeErrorsParams = Readonly<{
+  childrenErrors: FieldErrors;
   validationErrors: FieldErrors;
   customErrors: FieldErrors;
 }>;
 
 function mergeErrors(params: MergeErrorsParams): FieldErrors {
   return {
+    ...params.childrenErrors,
     ...params.validationErrors,
     ...params.customErrors,
   };
