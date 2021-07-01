@@ -57,14 +57,14 @@ function mergeErrors(params: MergeErrorsParams): FieldErrors {
   };
 }
 
-type FieldImplParams<T> = Readonly<{
+type FieldNodeImplParams<T> = Readonly<{
   path: string;
   parent?: Parent<T> | undefined;
   defaultValue: T;
   value: T;
 }>;
 
-export class FieldImpl<T> implements FieldNode<T> {
+export class FieldNodeImpl<T> implements FieldNode<T> {
   readonly id: string;
   private path: string;
 
@@ -92,8 +92,8 @@ export class FieldImpl<T> implements FieldNode<T> {
   private subscribers: Set<FieldSubscriber<T>>;
   private isDispatchQueued: boolean;
 
-  constructor(params: FieldImplParams<T>) {
-    this.id = `Field/${uniqueId()}`;
+  constructor(params: FieldNodeImplParams<T>) {
+    this.id = `FieldNode/${uniqueId()}`;
     this.path = params.path;
 
     this.parent = params.parent;
@@ -344,7 +344,7 @@ export class FieldImpl<T> implements FieldNode<T> {
 
   addValidator(key: string, validator: Validator<T>): Disposable {
     if (this.validators.has(key)) {
-      throw new Error(`Field '${this.path}' already has a validator '${key}'`);
+      throw new Error(`FieldNode '${this.path}' already has a validator '${key}'`);
     }
     this.validators.set(key, validator);
     this.runValidator(key);
@@ -487,7 +487,7 @@ export class FieldImpl<T> implements FieldNode<T> {
 
   connect(): Disposable {
     if (!this.parent) {
-      throw new Error(`Field '${this.path}' has no parent`);
+      throw new Error(`FieldNode '${this.path}' has no parent`);
     }
     this.isConnected = true;
     this.parent.attach();
@@ -516,7 +516,7 @@ export class FieldImpl<T> implements FieldNode<T> {
   createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]> {
     const getter: Getter<T, T[K]> = value => value[key];
     const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
-    const child: FieldImpl<T[K]> = new FieldImpl({
+    const child: FieldNodeImpl<T[K]> = new FieldNodeImpl({
       path: `${this.path}.${String(key)}`,
       parent: this.toParent(key, setter, () => child.toChild(getter)),
       defaultValue: getter(this.defaultValue),
@@ -618,7 +618,7 @@ export class FieldImpl<T> implements FieldNode<T> {
 
   private attachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
     if (this.children.has(key)) {
-      throw new Error(`Field '${this.path}' already has a child '${String(key)}'`);
+      throw new Error(`FieldNode '${this.path}' already has a child '${String(key)}'`);
     }
     this.children.set(key, child);
     child.setDefaultValue(this.defaultValue);

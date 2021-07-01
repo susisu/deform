@@ -1,25 +1,25 @@
 import { waitForMicrotasks } from "../__tests__/utils";
 import { ValidationRequest, Validator } from "./form";
-import { FieldImpl } from "./impl";
+import { FieldNodeImpl } from "./impl";
 
-describe("FieldImpl", () => {
+describe("FieldNodeImpl", () => {
   describe("#id", () => {
-    it("starts with 'Field/'", () => {
-      const field = new FieldImpl({
+    it("starts with 'FieldNode/'", () => {
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      expect(field.id).toMatch(/^Field\//);
+      expect(field.id).toMatch(/^FieldNode\//);
     });
 
     it("is uniquely generated for each field", () => {
-      const field1 = new FieldImpl({
+      const field1 = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      const field2 = new FieldImpl({
+      const field2 = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -30,7 +30,7 @@ describe("FieldImpl", () => {
 
   describe("#getSnapshot", () => {
     it("gets the latest snapshot of the field's state", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -63,7 +63,7 @@ describe("FieldImpl", () => {
 
   describe("#subscribe", () => {
     it("attaches a function that subscribes the field's state", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -89,7 +89,7 @@ describe("FieldImpl", () => {
 
   describe("#setDefaultValue", () => {
     it("sets the default value of the field", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -117,7 +117,7 @@ describe("FieldImpl", () => {
     });
 
     it("dispatches only once when called multiple times", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -142,7 +142,7 @@ describe("FieldImpl", () => {
 
   describe("#setValue", () => {
     it("sets the value of the field", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -170,7 +170,7 @@ describe("FieldImpl", () => {
     });
 
     it("dispatches only once when called multiple times", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -193,7 +193,7 @@ describe("FieldImpl", () => {
     });
 
     it("triggers validation", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -218,7 +218,7 @@ describe("FieldImpl", () => {
 
   describe("#setTouched", () => {
     it("sets the field touched", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -247,7 +247,7 @@ describe("FieldImpl", () => {
 
   describe("#setDirty", () => {
     it("sets the field dirty", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -276,7 +276,7 @@ describe("FieldImpl", () => {
 
   describe("#setCustomErrors", () => {
     it("sets custom errors of the field", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -310,7 +310,7 @@ describe("FieldImpl", () => {
     });
 
     it("overrides validation errors", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -360,7 +360,7 @@ describe("FieldImpl", () => {
 
   describe("reset", () => {
     it("resets the field's state", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -436,7 +436,7 @@ describe("FieldImpl", () => {
     });
 
     it("triggers validation if the value is already default", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 0,
@@ -481,7 +481,7 @@ describe("FieldImpl", () => {
     });
 
     it("accepts immediate validation errors after resetting", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -518,7 +518,7 @@ describe("FieldImpl", () => {
     });
 
     it("resets the children", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -595,7 +595,7 @@ describe("FieldImpl", () => {
 
   describe("#addValidator", () => {
     it("attaches a validator to the field", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -676,7 +676,7 @@ describe("FieldImpl", () => {
     });
 
     it("aborts the pending validation request when a new request is created", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -746,7 +746,7 @@ describe("FieldImpl", () => {
     });
 
     it("cleans up the error when a validator is removed", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -798,7 +798,7 @@ describe("FieldImpl", () => {
     });
 
     it("cleans up the pending validation request when a validator is removed", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -853,7 +853,7 @@ describe("FieldImpl", () => {
     });
 
     it("does nothing when a validator is removed twice", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -904,7 +904,7 @@ describe("FieldImpl", () => {
     });
 
     it("throws error if the field already has a validator with the same key", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -914,13 +914,13 @@ describe("FieldImpl", () => {
 
       expect(() => {
         field.addValidator("foo", () => {});
-      }).toThrowError("Field '$root' already has a validator 'foo'");
+      }).toThrowError("FieldNode '$root' already has a validator 'foo'");
     });
   });
 
   describe("#validate", () => {
     it("triggers validation", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -969,7 +969,7 @@ describe("FieldImpl", () => {
     });
 
     it("triggers validation of the children", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1037,7 +1037,7 @@ describe("FieldImpl", () => {
 
   describe("#validateOnce", () => {
     it("runs attached validators with a given value and returns the errors", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1088,7 +1088,7 @@ describe("FieldImpl", () => {
     });
 
     it("includes custom errors in the result", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1138,7 +1138,7 @@ describe("FieldImpl", () => {
     });
 
     it("is aborted when the signal is aborted", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1179,7 +1179,7 @@ describe("FieldImpl", () => {
     });
 
     it("is aborted if the signal has already been aborted", async () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1209,7 +1209,7 @@ describe("FieldImpl", () => {
     });
 
     it("runs validators attached to the children with a given value and returns the errors", async () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1279,18 +1279,18 @@ describe("FieldImpl", () => {
 
   describe("#connect", () => {
     it("throws error if the field has no parent", () => {
-      const field = new FieldImpl({
+      const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
       expect(() => {
         field.connect();
-      }).toThrowError("Field '$root' has no parent");
+      }).toThrowError("FieldNode '$root' has no parent");
     });
 
     it("throws error when trying to connect two children for the same key", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1300,11 +1300,11 @@ describe("FieldImpl", () => {
       child1.connect();
       expect(() => {
         child2.connect();
-      }).toThrowError("Field '$root' already has a child 'x'");
+      }).toThrowError("FieldNode '$root' already has a child 'x'");
     });
 
     it("synchronizes a child with the parent only if they are connected", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1354,7 +1354,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the default value of a child with the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1397,7 +1397,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the value of a child with the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1428,7 +1428,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the touched state from a child to the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1455,7 +1455,7 @@ describe("FieldImpl", () => {
     });
 
     it("does not synchronize the touched state from the parent to a child", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1476,7 +1476,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the dirty state from a child to the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1503,7 +1503,7 @@ describe("FieldImpl", () => {
     });
 
     it("does not synchronize the dirty state from the parent to a child", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1524,7 +1524,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the errors from a child to the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1551,7 +1551,7 @@ describe("FieldImpl", () => {
     });
 
     it("does not synchronize the errors from the parent to a child", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1579,7 +1579,7 @@ describe("FieldImpl", () => {
     });
 
     it("synchronizes the pending state from a child to the parent", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1606,7 +1606,7 @@ describe("FieldImpl", () => {
     });
 
     it("does not synchronize the pending state from the parent to a child", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1629,7 +1629,7 @@ describe("FieldImpl", () => {
 
   describe("#createChild", () => {
     it("creates a child of the field", () => {
-      const parent = new FieldImpl({
+      const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
