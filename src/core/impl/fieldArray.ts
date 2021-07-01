@@ -5,66 +5,26 @@ import {
   FieldArraySubscriber,
   FieldErrors,
   FieldNode,
-  FieldSnapshot,
-  FieldSubscriber,
-  ValidateOnceOptions,
-  Validator,
 } from "../form";
-import { uniqueId } from "./shared";
+import { FieldImpl } from "./field";
+import { Parent } from "./shared";
 
-export class FieldArrayImpl<T> implements FieldArray<T> {
-  readonly id: string;
+export type FieldArrayImplParams<T> = Readonly<{
+  path: string;
+  parent?: Parent<T> | undefined;
+  defaultValue: T;
+  value: T;
+}>;
 
-  constructor() {
-    this.id = `FieldArray/${uniqueId()}`;
-  }
-
-  getSnapshot(): FieldSnapshot<T> {
-    throw new Error("not implemented");
-  }
-
-  subscribe(_subscriber: FieldSubscriber<T>): Disposable {
-    throw new Error("not implemented");
-  }
-
-  setDefaultValue(_value: T): void {
-    throw new Error("not implemented");
-  }
-
-  setValue(_value: T): void {
-    throw new Error("not implemented");
-  }
-
-  setTouched(): void {
-    throw new Error("not implemented");
-  }
-
-  setDirty(): void {
-    throw new Error("not implemented");
-  }
-
-  setCustomErrors(_errors: FieldErrors): void {
-    throw new Error("not implemented");
-  }
-
-  reset(): void {
-    throw new Error("not implemented");
-  }
-
-  addValidator(_key: string, _validator: Validator<T>): Disposable {
-    throw new Error("not implemented");
-  }
-
-  validate(): void {
-    throw new Error("not implemented");
-  }
-
-  validateOnce(_value: T, _options?: ValidateOnceOptions): Promise<FieldErrors> {
-    throw new Error("not implemented");
-  }
-
-  connect(): Disposable {
-    throw new Error("not implemented");
+export class FieldArrayImpl<T> extends FieldImpl<T> implements FieldArray<T> {
+  constructor(params: FieldArrayImplParams<T>) {
+    super({
+      tag: "FieldArray",
+      path: params.path,
+      parent: params.parent,
+      defaultValue: params.defaultValue,
+      value: params.value,
+    });
   }
 
   getFields(): ReadonlyArray<FieldNode<ElememtType<T>>> {
@@ -96,6 +56,26 @@ export class FieldArrayImpl<T> implements FieldArray<T> {
   }
 
   swap(_aIndex: number, _bIndex: number): void {
+    throw new Error("not implemented");
+  }
+
+  protected updateChildrenDefaultValue(): void {
+    throw new Error("not implemented");
+  }
+
+  protected updateChildrenValue(): void {
+    throw new Error("not implemented");
+  }
+
+  protected resetChildren(): void {
+    throw new Error("not implemented");
+  }
+
+  protected validateChildren(): void {
+    throw new Error("not implemented");
+  }
+
+  protected validateChildrenOnce(_value: T, _signal: AbortSignal): Promise<FieldErrors> {
     throw new Error("not implemented");
   }
 }
