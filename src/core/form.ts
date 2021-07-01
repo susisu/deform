@@ -223,39 +223,59 @@ export class FormField<T> implements FieldNode<T> {
     this.updateParentIsPending();
   }
 
-  setDefaultValue(defaultValue: T): void {
+  private bareSetDefaultValue(defaultValue: T): boolean {
     if (Object.is(this.defaultValue, defaultValue)) {
-      return;
+      return false;
     }
     this.defaultValue = defaultValue;
     this.updateSnapshotDefaultValue();
-    this.updateChildrenDefaultValue();
+    return true;
   }
 
-  setValue(value: T): void {
+  setDefaultValue(defaultValue: T): void {
+    if (this.bareSetDefaultValue(defaultValue)) {
+      this.updateChildrenDefaultValue();
+    }
+  }
+
+  private bareSetValue(value: T): boolean {
     if (Object.is(this.value, value)) {
-      return;
+      return false;
     }
     this.value = value;
     this.updateSnapshotValue();
-    this.updateChildrenValue();
-    this.runAllValidators();
+    return true;
   }
 
-  setTouched(): void {
-    if (this.isTouched) {
+  setValue(value: T): void {
+    if (this.bareSetValue(value)) {
+      this.updateChildrenValue();
+      this.runAllValidators();
+    }
+  }
+
+  private setIsTouched(isTouched: boolean): void {
+    if (this.isTouched === isTouched) {
       return;
     }
-    this.isTouched = true;
+    this.isTouched = isTouched;
     this.updateSnapshotIsTouched();
   }
 
-  setDirty(): void {
-    if (this.isDirty) {
+  setTouched(): void {
+    this.setIsTouched(true);
+  }
+
+  private setIsDirty(isDirty: boolean): void {
+    if (this.isDirty === isDirty) {
       return;
     }
-    this.isDirty = true;
+    this.isDirty = isDirty;
     this.updateSnapshotIsDirty();
+  }
+
+  setDirty(): void {
+    this.setIsDirty(true);
   }
 
   private setValidationErrors(errors: FieldErrors): void {
@@ -272,6 +292,16 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.customErrors = errors;
     this.updateSnapshotErrors();
+  }
+
+  reset(): void {
+    this.bareSetValue(this.defaultValue);
+    this.setIsTouched(false);
+    this.setIsDirty(false);
+    this.setValidationErrors({});
+    this.setCustomErrors({});
+    this.resetChildren();
+    this.runAllValidators();
   }
 
   addValidator(key: string, validator: Validator<T>): Disposable {
@@ -538,6 +568,9 @@ export class FormField<T> implements FieldNode<T> {
           this.setValue(getter(value));
         }
       },
+      reset: () => {
+        this.reset();
+      },
       validate: () => {
         this.validate();
       },
@@ -609,19 +642,25 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateChildrenDefaultValue(): void {
-    for (const child of [...this.children.values()]) {
+    for (const child of this.children.values()) {
       child.setDefaultValue(this.defaultValue);
     }
   }
 
   private updateChildrenValue(): void {
-    for (const child of [...this.children.values()]) {
+    for (const child of this.children.values()) {
       child.setValue(this.value);
     }
   }
 
+  private resetChildren(): void {
+    for (const child of this.children.values()) {
+      child.reset();
+    }
+  }
+
   private validateChildren(): void {
-    for (const child of [...this.children.values()]) {
+    for (const child of this.children.values()) {
       child.validate();
     }
   }
@@ -666,6 +705,7 @@ type Parent<T> = Readonly<{
 type Child<T> = Readonly<{
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
+  reset: () => void;
   validate: () => void;
   validateOnce: (value: T, signal: AbortSignal) => Promise<FieldErrors>;
 }>;

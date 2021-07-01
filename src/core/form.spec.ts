@@ -358,6 +358,241 @@ describe("FormField", () => {
     });
   });
 
+  describe("reset", () => {
+    it("resets the field's state", async () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      field.setValue(1);
+      field.setTouched();
+      field.setDirty();
+      field.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: 1 }));
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 1,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: 0 }));
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: false },
+        isPending: false,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: false },
+        isPending: false,
+      });
+    });
+
+    it("triggers validation if the value is already default", () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 0,
+      });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: 0 }));
+      request1.resolve(true);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { foo: true },
+        isPending: false,
+      });
+
+      field.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: 0 }));
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { foo: false },
+        isPending: false,
+      });
+    });
+
+    it("accepts immediate validation errors after resetting", () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      field.setValue(1);
+      field.setTouched();
+      field.setDirty();
+      field.setCustomErrors({ foo: true });
+      const validator: Validator<number> = ({ resolve }) => {
+        resolve(true);
+      };
+      field.addValidator("bar", validator);
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 1,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.reset();
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: true },
+        isPending: false,
+      });
+    });
+
+    it("resets the children", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      child.setValue(2);
+      child.setTouched();
+      child.setDirty();
+      child.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      child.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: 2 }));
+      request1.resolve({});
+      expect(parent.getSnapshot()).toEqual({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 2, y: 43 },
+        isTouched: true,
+        isDirty: true,
+        errors: { x: true },
+        isPending: false,
+      });
+      expect(child.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 2,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: {} },
+        isPending: false,
+      });
+
+      parent.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: 0 }));
+      expect(parent.getSnapshot()).toEqual({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 0, y: 1 },
+        isTouched: false,
+        isDirty: false,
+        errors: { x: false },
+        isPending: true,
+      });
+      expect(child.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      request2.resolve(null);
+      expect(parent.getSnapshot()).toEqual({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 0, y: 1 },
+        isTouched: false,
+        isDirty: false,
+        errors: { x: false },
+        isPending: false,
+      });
+      expect(child.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: null },
+        isPending: false,
+      });
+    });
+  });
+
   describe("#addValidator", () => {
     it("attaches a validator to the field", async () => {
       const field = new FormField({
