@@ -6,7 +6,7 @@ describe("FormField", () => {
   describe("#id", () => {
     it("starts with 'FormField/'", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -15,12 +15,12 @@ describe("FormField", () => {
 
     it("is uniquely generated for each field", () => {
       const field1 = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
       const field2 = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -31,18 +31,18 @@ describe("FormField", () => {
   describe("#path", () => {
     it("is set by the parameter", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      expect(field.path).toBe("$root.test");
+      expect(field.path).toBe("$root");
     });
   });
 
   describe("#getSnapshot", () => {
     it("gets the latest snapshot of the field's state", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -75,7 +75,7 @@ describe("FormField", () => {
   describe("#subscribe", () => {
     it("attaches a function that subscribes the field's state", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -101,7 +101,7 @@ describe("FormField", () => {
   describe("#setValue", () => {
     it("sets the value of the field", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -129,7 +129,7 @@ describe("FormField", () => {
 
     it("dispatches only once when called multiple times", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -152,7 +152,7 @@ describe("FormField", () => {
 
     it("triggers validation", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -177,7 +177,7 @@ describe("FormField", () => {
   describe("#setTouched", () => {
     it("sets the field touched", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -206,7 +206,7 @@ describe("FormField", () => {
   describe("#setDirty", () => {
     it("sets the field dirty", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -235,7 +235,7 @@ describe("FormField", () => {
   describe("#setCustomErrors", () => {
     it("sets custom errors of the field", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -269,7 +269,7 @@ describe("FormField", () => {
 
     it("overrides validation errors", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -319,7 +319,7 @@ describe("FormField", () => {
   describe("#addValidator", () => {
     it("attaches a validator to the field", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -400,7 +400,7 @@ describe("FormField", () => {
 
     it("aborts the pending validation request when a new request is created", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -470,7 +470,7 @@ describe("FormField", () => {
 
     it("cleans up the error when a validator is removed", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -522,7 +522,7 @@ describe("FormField", () => {
 
     it("cleans up the pending validation request when a validator is removed", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -577,7 +577,7 @@ describe("FormField", () => {
 
     it("does nothing when a validator is removed twice", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -628,7 +628,7 @@ describe("FormField", () => {
 
     it("throws error if the field already has a validator with the same name", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -637,14 +637,14 @@ describe("FormField", () => {
 
       expect(() => {
         field.addValidator("foo", () => {});
-      }).toThrowError("FormField '$root.test' already has a validator named 'foo'");
+      }).toThrowError("FormField '$root' already has a validator named 'foo'");
     });
   });
 
   describe("#validate", () => {
     it("triggers validation", () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -695,7 +695,7 @@ describe("FormField", () => {
   describe("#validateOnce", () => {
     it("runs attached validators with a given value and returns the errors", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -746,7 +746,7 @@ describe("FormField", () => {
 
     it("includes custom errors in the result", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -796,7 +796,7 @@ describe("FormField", () => {
 
     it("is aborted when the signal is aborted", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
@@ -837,7 +837,7 @@ describe("FormField", () => {
 
     it("is aborted if the signal has already been aborted", async () => {
       const field = new FormField({
-        path: "$root.test",
+        path: "$root",
         defaultValue: 0,
         value: 42,
       });
