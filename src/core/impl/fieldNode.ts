@@ -26,8 +26,8 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
   private path: string;
 
   private parent: Parent<T> | undefined;
-  private children: Map<ChildKeyOf<T>, Child<T>>;
   private isConnected: boolean;
+  private children: Map<ChildKeyOf<T>, Child<T>>;
 
   private defaultValue: T;
   private value: T;
@@ -54,8 +54,8 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
     this.path = params.path;
 
     this.parent = params.parent;
-    this.children = new Map();
     this.isConnected = false;
+    this.children = new Map();
 
     this.defaultValue = params.defaultValue;
     this.value = params.value;
@@ -442,6 +442,58 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
     }
   }
 
+  private setChildIsTouched(key: PropertyKey, isTouched: boolean): void {
+    if (isTouched) {
+      this.touchedChildKeys.add(key);
+    } else {
+      this.touchedChildKeys.delete(key);
+    }
+    this.updateSnapshotIsTouched();
+  }
+
+  private unsetChildIsTouched(key: PropertyKey): void {
+    this.touchedChildKeys.delete(key);
+    this.updateSnapshotIsTouched();
+  }
+
+  private setChildIsDirty(key: PropertyKey, isDirty: boolean): void {
+    if (isDirty) {
+      this.dirtyChildKeys.add(key);
+    } else {
+      this.dirtyChildKeys.delete(key);
+    }
+    this.updateSnapshotIsDirty();
+  }
+
+  private unsetChildIsDirty(key: PropertyKey): void {
+    this.dirtyChildKeys.delete(key);
+    this.updateSnapshotIsDirty();
+  }
+
+  private setChildErrors(key: PropertyKey, errors: FieldErrors): void {
+    this.childrenErrors.set(key, errors);
+    this.updateSnapshotErrors();
+  }
+
+  private unsetChildErrors(key: PropertyKey): void {
+    this.childrenErrors.delete(key);
+    this.updateSnapshotErrors();
+  }
+
+  private setChildIsPending(key: PropertyKey, isPending: boolean): void {
+    if (isPending) {
+      this.pendingChildKeys.add(key);
+    } else {
+      this.pendingChildKeys.delete(key);
+    }
+    this.updateSnapshotIsPending();
+  }
+
+  private unsetChildIsPending(key: PropertyKey): void {
+    this.pendingChildKeys.delete(key);
+    this.updateSnapshotIsPending();
+  }
+
   connect(): Disposable {
     if (!this.parent) {
       throw new Error(`FieldNode '${this.path}' has no parent`);
@@ -518,38 +570,22 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
       },
       setIsTouched: isTouched => {
         if (this.children.get(key) === child) {
-          if (isTouched) {
-            this.touchedChildKeys.add(key);
-          } else {
-            this.touchedChildKeys.delete(key);
-          }
-          this.updateSnapshotIsTouched();
+          this.setChildIsTouched(key, isTouched);
         }
       },
       setIsDirty: isDirty => {
         if (this.children.get(key) === child) {
-          if (isDirty) {
-            this.dirtyChildKeys.add(key);
-          } else {
-            this.dirtyChildKeys.delete(key);
-          }
-          this.updateSnapshotIsDirty();
+          this.setChildIsDirty(key, isDirty);
         }
       },
       setErrors: errors => {
         if (this.children.get(key) === child) {
-          this.childrenErrors.set(key, errors);
-          this.updateSnapshotErrors();
+          this.setChildErrors(key, errors);
         }
       },
       setIsPending: isPending => {
         if (this.children.get(key) === child) {
-          if (isPending) {
-            this.pendingChildKeys.add(key);
-          } else {
-            this.pendingChildKeys.delete(key);
-          }
-          this.updateSnapshotIsPending();
+          this.setChildIsPending(key, isPending);
         }
       },
     };
@@ -588,18 +624,10 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
 
   private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
     if (this.children.get(key) === child) {
-      this.touchedChildKeys.delete(key);
-      this.updateSnapshotIsTouched();
-
-      this.dirtyChildKeys.delete(key);
-      this.updateSnapshotIsDirty();
-
-      this.childrenErrors.delete(key);
-      this.updateSnapshotErrors();
-
-      this.pendingChildKeys.delete(key);
-      this.updateSnapshotIsPending();
-
+      this.unsetChildIsTouched(key);
+      this.unsetChildIsDirty(key);
+      this.unsetChildErrors(key);
+      this.unsetChildIsPending(key);
       this.children.delete(key);
     }
   }
