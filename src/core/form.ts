@@ -112,7 +112,7 @@ export class FormField<T> implements FieldNode<T> {
   // depends on: childrenErrors, validationErrors, customErrors
   private calcSnapshotErrors(): FieldErrors {
     const childrenErrors = Object.fromEntries(
-      [...this.childrenErrors].map(([key, errors]) => [key, !isValid(errors)])
+      [...this.childrenErrors].map(([key, errors]) => [key, !isValid(errors)] as const)
     );
     return mergeErrors({
       childrenErrors,
@@ -356,7 +356,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   validate(): void {
-    // TODO: validate children
+    this.validateChildren();
     this.runAllValidators();
   }
 
@@ -392,11 +392,12 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private async runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
-    return Promise.all(
+    const entries = await Promise.all(
       [...this.validators.keys()].map(key =>
         this.runValidatorOnce(key, value, signal).then(error => [key, error] as const)
       )
-    ).then(entries => Object.fromEntries(entries));
+    );
+    return Object.fromEntries(entries);
   }
 
   async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
@@ -411,9 +412,16 @@ export class FormField<T> implements FieldNode<T> {
       });
     }
     const customErrors = this.customErrors;
-    const childrenErrors = {}; // TODO
-    const validationErrors = await this.runAllValidatorsOnce(value, controller.signal);
-    return mergeErrors({ childrenErrors, validationErrors, customErrors });
+    try {
+      const [childrenErrors, validationErrors] = await Promise.all([
+        this.validateChildrenOnce(value, controller.signal),
+        this.runAllValidatorsOnce(value, controller.signal),
+      ]);
+      return mergeErrors({ childrenErrors, validationErrors, customErrors });
+    } catch (err: unknown) {
+      controller.abort();
+      throw err;
+    }
   }
 
   connect(): Disposable {
@@ -536,11 +544,9 @@ export class FormField<T> implements FieldNode<T> {
         }
       },
       validate: () => {
-        throw new Error("not implemented");
+        this.validate();
       },
-      validateOnce: _value => {
-        throw new Error("not implemented");
-      },
+      validateOnce: (value, signal) => this.validateOnce(getter(value), { signal }),
     };
   }
 
@@ -608,15 +614,30 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateChildrenDefaultValue(): void {
-    for (const child of this.children.values()) {
+    for (const child of [...this.children.values()]) {
       child.setDefaultValue(this.defaultValue);
     }
   }
 
   private updateChildrenValue(): void {
-    for (const child of this.children.values()) {
+    for (const child of [...this.children.values()]) {
       child.setValue(this.value);
     }
+  }
+
+  private validateChildren(): void {
+    for (const child of [...this.children.values()]) {
+      child.validate();
+    }
+  }
+
+  private async validateChildrenOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
+    const entries = await Promise.all(
+      [...this.children].map(([key, child]) =>
+        child.validateOnce(value, signal).then(errors => [key, !isValid(errors)] as const)
+      )
+    );
+    return Object.fromEntries(entries);
   }
 }
 
@@ -665,7 +686,7 @@ type Child<T> = Readonly<{
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
   validate: () => void;
-  validateOnce: (value: T) => Promise<FieldErrors>;
+  validateOnce: (value: T, signal: AbortSignal) => Promise<FieldErrors>;
 }>;
 
 type Getter<A, B> = (a: A) => B;

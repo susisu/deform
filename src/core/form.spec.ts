@@ -732,6 +732,72 @@ describe("FormField", () => {
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
     });
+
+    it("triggers validation of the children", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      child.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false }, isPending: true })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve({});
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+      );
+
+      parent.validate();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: true })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: true })
+      );
+
+      request2.resolve(null);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: null }, isPending: false })
+      );
+    });
   });
 
   describe("#validateOnce", () => {
@@ -905,6 +971,74 @@ describe("FormField", () => {
       expect(validator).toHaveBeenCalledTimes(1);
 
       await expect(promise).rejects.toThrowError("Aborted");
+    });
+
+    it("runs validators attached to the children with a given value and returns the errors", async () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      child.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false }, isPending: true })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve({});
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+      );
+
+      const promise = parent.validateOnce({ x: 2, y: 3 });
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: true,
+        value: 2,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+      );
+
+      request2.resolve(null);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: false })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+      );
+
+      await expect(promise).resolves.toEqual({ x: false });
     });
   });
 
