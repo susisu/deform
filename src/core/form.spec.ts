@@ -98,6 +98,59 @@ describe("FormField", () => {
     });
   });
 
+  describe("#setDefaultValue", () => {
+    it("sets the default value of the field", async () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 0 }));
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setDefaultValue(1);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 1 }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ defaultValue: 1 }));
+
+      // does nothing if the same value is already set
+      field.setDefaultValue(1);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 1 }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches only once when called multiple times", async () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 0 }));
+
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setDefaultValue(1);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 1 }));
+
+      field.setDefaultValue(2);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 2 }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ defaultValue: 2 }));
+    });
+  });
+
   describe("#setValue", () => {
     it("sets the value of the field", async () => {
       const field = new FormField({
@@ -932,6 +985,32 @@ describe("FormField", () => {
       child.connect();
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 8, y: 9 } }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 8 }));
+    });
+
+    it("synchronizes the default value between the parent and the children", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: 0, y: 1 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 0 }));
+
+      parent.setDefaultValue({ x: 2, y: 3 });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: 2, y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 2 }));
+
+      child.setDefaultValue(4);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: 4, y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: 4 }));
     });
 
     it("synchronizes the value between the parent and the children", () => {

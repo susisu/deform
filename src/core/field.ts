@@ -4,6 +4,7 @@ export interface Field<T> {
   readonly id: string;
   getSnapshot(): FieldSnapshot<T>;
   subscribe(subscriber: FieldSubscriber<T>): Disposable;
+  setDefaultValue(value: T): void;
   setValue(value: T): void;
   setTouched(): void;
   setDirty(): void;

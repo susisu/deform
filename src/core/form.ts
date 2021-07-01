@@ -206,7 +206,7 @@ export class FormField<T> implements FieldNode<T> {
     this.updateParentIsPending();
   }
 
-  private setDefaultValue(defaultValue: T): void {
+  setDefaultValue(defaultValue: T): void {
     if (Object.is(this.defaultValue, defaultValue)) {
       return;
     }
