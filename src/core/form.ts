@@ -5,6 +5,7 @@ import {
   FieldNode,
   FieldSnapshot,
   FieldSubscriber,
+  isEqualErrors,
   isValid,
   ValidateOnceOptions,
   Validator,
@@ -631,18 +632,6 @@ export class FormField<T> implements FieldNode<T> {
     );
     return Object.fromEntries(entries);
   }
-}
-
-function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
-  if (a === b) {
-    return true;
-  }
-  const aKeys = Object.keys(a).sort();
-  const bKeys = Object.keys(b).sort();
-  if (aKeys.length !== bKeys.length) {
-    return false;
-  }
-  return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
 }
 
 type MergeErrorsParams = Readonly<{

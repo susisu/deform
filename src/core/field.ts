@@ -41,6 +41,18 @@ export type ValidateOnceOptions = Readonly<{
   signal?: AbortSignal;
 }>;
 
+export function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
+  if (a === b) {
+    return true;
+  }
+  const aKeys = Object.keys(a).sort();
+  const bKeys = Object.keys(b).sort();
+  if (aKeys.length !== bKeys.length) {
+    return false;
+  }
+  return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
+}
+
 export function isValid(errors: FieldErrors): boolean {
   const keys = Object.keys(errors);
   return keys.every(key => !errors[key]);
