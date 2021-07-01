@@ -865,4 +865,93 @@ describe("FormField", () => {
       await expect(promise).rejects.toThrowError("Aborted");
     });
   });
+
+  describe("#createChild", () => {
+    it("creates a child of the field", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      expect(child.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 42,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: false,
+      });
+    });
+
+    it("synchronizes the parent and the children only if they are connected", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+
+      parent.setValue({ x: 2, y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 2, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+
+      child.setValue(4);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 2, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 4 }));
+
+      // sync
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 2, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 2 }));
+
+      parent.setValue({ x: 5, y: 6 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 5, y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 5 }));
+
+      child.setValue(7);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 7, y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 7 }));
+
+      // unsync
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 7, y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 7 }));
+
+      parent.setValue({ x: 8, y: 9 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 8, y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 7 }));
+
+      child.setValue(10);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 8, y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 10 }));
+
+      // resync
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 8, y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 8 }));
+    });
+
+    it("synchronizes the value between the parent and the children", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+
+      parent.setValue({ x: 2, y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 2, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 2 }));
+
+      child.setValue(4);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 4, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 4 }));
+    });
+  });
 });

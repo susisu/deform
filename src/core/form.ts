@@ -153,6 +153,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, defaultValue };
     this.queueDispatch();
+    this.updateParentDefaultValue();
   }
 
   private updateSnapshotValue(): void {
@@ -162,6 +163,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, value };
     this.queueDispatch();
+    this.updateParentValue();
   }
 
   private updateSnapshotIsTouched(): void {
@@ -171,6 +173,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, isTouched };
     this.queueDispatch();
+    this.updateParentIsTouched();
   }
 
   private updateSnapshotIsDirty(): void {
@@ -180,6 +183,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, isDirty };
     this.queueDispatch();
+    this.updateParentIsDirty();
   }
 
   private updateSnapshotErrors(): void {
@@ -189,6 +193,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, errors };
     this.queueDispatch();
+    this.updateParentErrors();
   }
 
   private updateSnapshotIsPending(): void {
@@ -198,6 +203,16 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.snapshot = { ...this.snapshot, isPending };
     this.queueDispatch();
+    this.updateParentIsPending();
+  }
+
+  private setDefaultValue(defaultValue: T): void {
+    if (Object.is(this.defaultValue, defaultValue)) {
+      return;
+    }
+    this.defaultValue = defaultValue;
+    this.updateSnapshotDefaultValue();
+    this.updateChildrenDefaultValue();
   }
 
   setValue(value: T): void {
@@ -206,6 +221,7 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.value = value;
     this.updateSnapshotValue();
+    this.updateChildrenValue();
     this.runAllValidators();
   }
 
@@ -432,28 +448,31 @@ export class FormField<T> implements FieldNode<T> {
         }
         this.detachChild(key, child);
       },
-      setDefaultValue: _defaultValue => {
-        throw new Error("not implemented");
+      setDefaultValue: defaultValue => {
+        this.setDefaultValue(setter(this.defaultValue, defaultValue));
       },
       setValue: value => {
         this.setValue(setter(this.value, value));
       },
       setIsTouched: _isTouched => {
-        throw new Error("not implemented");
+        // TODO
       },
       setIsDirty: _isDirty => {
-        throw new Error("not implemented");
+        // TODO
       },
       setErrors: _errors => {
-        throw new Error("not implemented");
+        // TODO
+      },
+      setIsPending: _isPending => {
+        // TODO
       },
     };
   }
 
   private toChild<PT>(getter: Getter<PT, T>): Child<PT> {
     return {
-      setDefaultValue: _defaultValue => {
-        throw new Error("not implemented");
+      setDefaultValue: defaultValue => {
+        this.setDefaultValue(getter(defaultValue));
       },
       setValue: value => {
         this.setValue(getter(value));
@@ -483,6 +502,56 @@ export class FormField<T> implements FieldNode<T> {
     if (this.children.get(key) === child) {
       // TODO: cleanup
       this.children.delete(key);
+    }
+  }
+
+  private updateParentDefaultValue(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setDefaultValue(this.snapshot.defaultValue);
+    }
+  }
+
+  private updateParentValue(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setValue(this.snapshot.value);
+    }
+  }
+
+  private updateParentIsTouched(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setIsTouched(this.snapshot.isTouched);
+    }
+  }
+
+  private updateParentIsDirty(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setIsDirty(this.snapshot.isDirty);
+    }
+  }
+
+  private updateParentErrors(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setErrors(this.snapshot.errors);
+    }
+  }
+
+  private updateParentIsPending(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setIsPending(this.snapshot.isPending);
+    }
+  }
+
+  private updateChildrenDefaultValue(): void {
+    const defaultValue = this.defaultValue;
+    for (const child of this.children.values()) {
+      child.setDefaultValue(defaultValue);
+    }
+  }
+
+  private updateChildrenValue(): void {
+    const value = this.value;
+    for (const child of this.children.values()) {
+      child.setValue(value);
     }
   }
 }
@@ -523,6 +592,7 @@ type Parent<T> = Readonly<{
   setIsTouched: (isTouched: boolean) => void;
   setIsDirty: (isDirty: boolean) => void;
   setErrors: (errors: FieldErrors) => void;
+  setIsPending: (isPending: boolean) => void;
 }>;
 
 type Child<T> = Readonly<{
