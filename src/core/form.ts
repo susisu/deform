@@ -453,8 +453,8 @@ export class FormField<T> implements FieldNode<T> {
     }
     this.isConnected = true;
     this.parent.attach();
-    this.parent.setDefaultValue(this.snapshot.defaultValue);
-    this.parent.setValue(this.snapshot.value);
+    this.parent.setDefaultValue(this.snapshot.defaultValue); // NO EFFECT
+    this.parent.setValue(this.snapshot.value); // NO EFFECT
     this.parent.setIsTouched(this.snapshot.isTouched);
     this.parent.setIsDirty(this.snapshot.isDirty);
     this.parent.setErrors(this.snapshot.errors);
