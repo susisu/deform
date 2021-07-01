@@ -909,6 +909,31 @@ describe("FormField", () => {
   });
 
   describe("#connect", () => {
+    it("throws error if the field has no parent", () => {
+      const field = new FormField({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(() => {
+        field.connect();
+      }).toThrowError("FormField '$root' has no parent");
+    });
+
+    it("throws error when trying to connect two children for the same key", () => {
+      const parent = new FormField({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child1 = parent.createChild("x");
+      const child2 = parent.createChild("x");
+      child1.connect();
+      expect(() => {
+        child2.connect();
+      }).toThrowError("FormField '$root' already has a child 'x'");
+    });
+
     it("synchronizes a child with the parent only if they are connected", () => {
       const parent = new FormField({
         path: "$root",
