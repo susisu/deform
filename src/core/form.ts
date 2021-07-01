@@ -19,6 +19,7 @@ const uniqueId = (() => {
 
 export type FormFieldParams<T> = Readonly<{
   path: string;
+  parent?: Parent<T> | undefined;
   defaultValue: T;
   value: T;
 }>;
@@ -26,6 +27,10 @@ export type FormFieldParams<T> = Readonly<{
 export class FormField<T> implements FieldNode<T> {
   readonly id: string;
   readonly path: string;
+
+  private parent: Parent<T> | undefined;
+  private children: Map<ChildKeyOf<T>, Child<T>>;
+  private connectionStatus: ConnectionStatus;
 
   private defaultValue: T;
   private value: T;
@@ -45,6 +50,10 @@ export class FormField<T> implements FieldNode<T> {
   constructor(params: FormFieldParams<T>) {
     this.id = `FormField/${uniqueId()}`;
     this.path = params.path;
+
+    this.parent = params.parent;
+    this.children = new Map();
+    this.connectionStatus = { type: "disconnected" };
 
     this.defaultValue = params.defaultValue;
     this.value = params.value;
@@ -404,3 +413,23 @@ function mergeErrors(params: MergeErrorsParams): FieldErrors {
 type ValidationStatus =
   | Readonly<{ type: "pending"; requestId: string; controller: AbortController }>
   | Readonly<{ type: "done" }>;
+
+type Parent<T> = Readonly<{
+  connect: () => Disposable;
+  setDefaultValue: (defaultValue: T) => void;
+  setValue: (value: T) => void;
+  setIsTouched: (isTouched: boolean) => void;
+  setIsDirty: (isDirty: boolean) => void;
+  setErrors: (errors: FieldErrors) => void;
+}>;
+
+type Child<T> = Readonly<{
+  setDefaultValue: (defaultValue: T) => void;
+  setValue: (value: T) => void;
+  validate: (value: T) => void;
+  validateOnce: (value: T) => Promise<FieldErrors>;
+}>;
+
+type ConnectionStatus =
+  | Readonly<{ type: "disconnected" }>
+  | Readonly<{ type: "connected"; onDisconnect: () => void }>;
