@@ -67,41 +67,41 @@ export class FormField<T> implements FieldNode<T> {
     this.validationStatuses = new Map();
 
     this.snapshot = {
-      defaultValue: this.getDefaultValue(),
-      value: this.getValue(),
-      isTouched: this.getIsTouched(),
-      isDirty: this.getIsDirty(),
-      errors: this.getErrors(),
-      isPending: this.getIsPending(),
+      defaultValue: this.calcSnapshotDefaultValue(),
+      value: this.calcSnapshotValue(),
+      isTouched: this.calcSnapshotIsTouched(),
+      isDirty: this.calcSnapshotIsDirty(),
+      errors: this.calcSnapshotErrors(),
+      isPending: this.calcSnapshotIsPending(),
     };
     this.subscribers = new Set();
     this.isDispatchQueued = false;
   }
 
-  private getDefaultValue(): T {
+  private calcSnapshotDefaultValue(): T {
     return this.defaultValue;
   }
 
-  private getValue(): T {
+  private calcSnapshotValue(): T {
     return this.value;
   }
 
-  private getIsTouched(): boolean {
+  private calcSnapshotIsTouched(): boolean {
     return this.isTouched;
   }
 
-  private getIsDirty(): boolean {
+  private calcSnapshotIsDirty(): boolean {
     return this.isDirty;
   }
 
-  private getErrors(): FieldErrors {
+  private calcSnapshotErrors(): FieldErrors {
     return mergeErrors({
       validationErrors: this.validationErrors,
       customErrors: this.customErrors,
     });
   }
 
-  private getIsPending(): boolean {
+  private calcSnapshotIsPending(): boolean {
     for (const status of this.validationStatuses.values()) {
       if (status.type === "pending") {
         return true;
@@ -147,7 +147,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotDefaultValue(): void {
-    const defaultValue = this.getDefaultValue();
+    const defaultValue = this.calcSnapshotDefaultValue();
     if (Object.is(this.snapshot.defaultValue, defaultValue)) {
       return;
     }
@@ -156,7 +156,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotValue(): void {
-    const value = this.getValue();
+    const value = this.calcSnapshotValue();
     if (Object.is(this.snapshot.value, value)) {
       return;
     }
@@ -165,7 +165,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotIsTouched(): void {
-    const isTouched = this.getIsTouched();
+    const isTouched = this.calcSnapshotIsTouched();
     if (this.snapshot.isTouched === isTouched) {
       return;
     }
@@ -174,7 +174,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotIsDirty(): void {
-    const isDirty = this.getIsDirty();
+    const isDirty = this.calcSnapshotIsDirty();
     if (this.snapshot.isDirty === isDirty) {
       return;
     }
@@ -183,7 +183,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotErrors(): void {
-    const errors = this.getErrors();
+    const errors = this.calcSnapshotErrors();
     if (isEqualErrors(this.snapshot.errors, errors)) {
       return;
     }
@@ -192,7 +192,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateSnapshotIsPending(): void {
-    const isPending = this.getIsPending();
+    const isPending = this.calcSnapshotIsPending();
     if (this.snapshot.isPending === isPending) {
       return;
     }
