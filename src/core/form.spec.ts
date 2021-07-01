@@ -626,7 +626,7 @@ describe("FormField", () => {
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
-    it("throws error if the field already has a validator with the same name", () => {
+    it("throws error if the field already has a validator with the same key", () => {
       const field = new FormField({
         path: "$root",
         defaultValue: 0,
@@ -637,7 +637,7 @@ describe("FormField", () => {
 
       expect(() => {
         field.addValidator("foo", () => {});
-      }).toThrowError("FormField '$root' already has a validator named 'foo'");
+      }).toThrowError("FormField '$root' already has a validator 'foo'");
     });
   });
 

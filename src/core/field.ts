@@ -8,7 +8,7 @@ export interface Field<T> {
   setTouched(): void;
   setDirty(): void;
   setCustomErrors(errors: FieldErrors): void;
-  addValidator(name: string, validator: Validator<T>): Disposable;
+  addValidator(key: string, validator: Validator<T>): Disposable;
   validate(): void;
   validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors>;
 }
@@ -24,7 +24,7 @@ export type FieldSnapshot<T> = Readonly<{
 
 export type FieldSubscriber<T> = (snapshot: FieldSnapshot<T>) => void;
 
-export type FieldErrors = Readonly<{ [name: string]: unknown }>;
+export type FieldErrors = Readonly<{ [key: string]: unknown }>;
 
 export type Validator<T> = (req: ValidationRequest<T>) => void;
 
@@ -41,8 +41,8 @@ export type ValidateOnceOptions = Readonly<{
 }>;
 
 export function isValid(errors: FieldErrors): boolean {
-  const names = Object.keys(errors);
-  return names.every(name => !errors[name]);
+  const keys = Object.keys(errors);
+  return keys.every(key => !errors[key]);
 }
 
 export interface FieldNode<T> extends Field<T> {

@@ -241,44 +241,44 @@ export class FormField<T> implements FieldNode<T> {
     this.updateSnapshotErrors();
   }
 
-  addValidator(name: string, validator: Validator<T>): Disposable {
-    if (this.validators.has(name)) {
-      throw new Error(`FormField '${this.path}' already has a validator named '${name}'`);
+  addValidator(key: string, validator: Validator<T>): Disposable {
+    if (this.validators.has(key)) {
+      throw new Error(`FormField '${this.path}' already has a validator '${key}'`);
     }
-    this.validators.set(name, validator);
-    this.runValidator(name);
+    this.validators.set(key, validator);
+    this.runValidator(key);
     return () => {
-      this.removeValidator(name, validator);
+      this.removeValidator(key, validator);
     };
   }
 
-  private removeValidator(name: string, validator: Validator<T>): void {
-    if (this.validators.get(name) === validator) {
-      this.validators.delete(name);
+  private removeValidator(key: string, validator: Validator<T>): void {
+    if (this.validators.get(key) === validator) {
+      this.validators.delete(key);
 
-      this.abortPendingValidation(name);
-      this.validationStatuses.delete(name);
+      this.abortPendingValidation(key);
+      this.validationStatuses.delete(key);
       this.updateSnapshotIsPending();
 
-      const { [name]: _, ...errors } = this.validationErrors;
+      const { [key]: _, ...errors } = this.validationErrors;
       this.setValidationErrors(errors);
     }
   }
 
-  private runValidator(name: string): void {
-    const validator = this.validators.get(name);
+  private runValidator(key: string): void {
+    const validator = this.validators.get(key);
     if (!validator) {
       // NEVER COMES HERE
       // eslint-disable-next-line no-console
-      console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
+      console.warn(`Unexpected: FormField '${this.path}' has no validator '${key}'`);
       return;
     }
 
-    this.abortPendingValidation(name);
+    this.abortPendingValidation(key);
 
     const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
-    this.validationStatuses.set(name, { type: "pending", requestId, controller });
+    this.validationStatuses.set(key, { type: "pending", requestId, controller });
     this.updateSnapshotIsPending();
 
     validator({
@@ -287,32 +287,32 @@ export class FormField<T> implements FieldNode<T> {
       value: this.value,
       resolve: error => {
         if (!controller.signal.aborted) {
-          this.resolveValidation(name, requestId, error);
+          this.resolveValidation(key, requestId, error);
         }
       },
       signal: controller.signal,
     });
   }
 
-  private abortPendingValidation(name: string): void {
-    const status = this.validationStatuses.get(name);
+  private abortPendingValidation(key: string): void {
+    const status = this.validationStatuses.get(key);
     if (status && status.type === "pending") {
       status.controller.abort();
     }
   }
 
-  private resolveValidation(name: string, requestId: string, error: unknown): void {
-    const status = this.validationStatuses.get(name);
+  private resolveValidation(key: string, requestId: string, error: unknown): void {
+    const status = this.validationStatuses.get(key);
     if (status && status.type === "pending" && status.requestId === requestId) {
-      this.setValidationErrors({ ...this.validationErrors, [name]: error });
-      this.validationStatuses.set(name, { type: "done" });
+      this.setValidationErrors({ ...this.validationErrors, [key]: error });
+      this.validationStatuses.set(key, { type: "done" });
       this.updateSnapshotIsPending();
     }
   }
 
   private runAllValidators(): void {
-    for (const name of this.validators.keys()) {
-      this.runValidator(name);
+    for (const key of this.validators.keys()) {
+      this.runValidator(key);
     }
   }
 
@@ -320,17 +320,17 @@ export class FormField<T> implements FieldNode<T> {
     this.runAllValidators();
   }
 
-  private async runValidatorOnce(name: string, value: T, signal: AbortSignal): Promise<unknown> {
+  private async runValidatorOnce(key: string, value: T, signal: AbortSignal): Promise<unknown> {
     if (signal.aborted) {
       // NEVER COMES HERE
       throw new Error("Aborted");
     }
 
-    const validator = this.validators.get(name);
+    const validator = this.validators.get(key);
     if (!validator) {
       // NEVER COMES HERE
       // eslint-disable-next-line no-console
-      console.warn(`Unexpected: FormField '${this.path}' has no validator named '${name}'`);
+      console.warn(`Unexpected: FormField '${this.path}' has no validator '${key}'`);
       return undefined;
     }
 
@@ -355,8 +355,8 @@ export class FormField<T> implements FieldNode<T> {
 
   private async runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
     return Promise.all(
-      [...this.validators.keys()].map(name =>
-        this.runValidatorOnce(name, value, signal).then(error => [name, error] as const)
+      [...this.validators.keys()].map(key =>
+        this.runValidatorOnce(key, value, signal).then(error => [key, error] as const)
       )
     ).then(entries => Object.fromEntries(entries));
   }
@@ -390,12 +390,12 @@ function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
   if (a === b) {
     return true;
   }
-  const aNames = Object.keys(a).sort();
-  const bNames = Object.keys(b).sort();
-  if (aNames.length !== bNames.length) {
+  const aKeys = Object.keys(a).sort();
+  const bKeys = Object.keys(b).sort();
+  if (aKeys.length !== bKeys.length) {
     return false;
   }
-  return aNames.every((name, i) => bNames[i] === name && Object.is(a[name], b[name]));
+  return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
 }
 
 type MergeErrorsParams = Readonly<{
