@@ -1,25 +1,25 @@
 import { waitForMicrotasks } from "../__tests__/utils";
 import { ValidationRequest, Validator } from "./field";
-import { FormField } from "./form";
+import { FieldImpl } from "./impl";
 
-describe("FormField", () => {
+describe("FieldImpl", () => {
   describe("#id", () => {
-    it("starts with 'FormField/'", () => {
-      const field = new FormField({
+    it("starts with 'Field/'", () => {
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      expect(field.id).toMatch(/^FormField\//);
+      expect(field.id).toMatch(/^Field\//);
     });
 
     it("is uniquely generated for each field", () => {
-      const field1 = new FormField({
+      const field1 = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      const field2 = new FormField({
+      const field2 = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -30,7 +30,7 @@ describe("FormField", () => {
 
   describe("#getSnapshot", () => {
     it("gets the latest snapshot of the field's state", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -63,7 +63,7 @@ describe("FormField", () => {
 
   describe("#subscribe", () => {
     it("attaches a function that subscribes the field's state", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -89,7 +89,7 @@ describe("FormField", () => {
 
   describe("#setDefaultValue", () => {
     it("sets the default value of the field", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -117,7 +117,7 @@ describe("FormField", () => {
     });
 
     it("dispatches only once when called multiple times", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -142,7 +142,7 @@ describe("FormField", () => {
 
   describe("#setValue", () => {
     it("sets the value of the field", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -170,7 +170,7 @@ describe("FormField", () => {
     });
 
     it("dispatches only once when called multiple times", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -193,7 +193,7 @@ describe("FormField", () => {
     });
 
     it("triggers validation", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -218,7 +218,7 @@ describe("FormField", () => {
 
   describe("#setTouched", () => {
     it("sets the field touched", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -247,7 +247,7 @@ describe("FormField", () => {
 
   describe("#setDirty", () => {
     it("sets the field dirty", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -276,7 +276,7 @@ describe("FormField", () => {
 
   describe("#setCustomErrors", () => {
     it("sets custom errors of the field", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -310,7 +310,7 @@ describe("FormField", () => {
     });
 
     it("overrides validation errors", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -360,7 +360,7 @@ describe("FormField", () => {
 
   describe("reset", () => {
     it("resets the field's state", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -436,7 +436,7 @@ describe("FormField", () => {
     });
 
     it("triggers validation if the value is already default", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 0,
@@ -481,7 +481,7 @@ describe("FormField", () => {
     });
 
     it("accepts immediate validation errors after resetting", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -518,7 +518,7 @@ describe("FormField", () => {
     });
 
     it("resets the children", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -595,7 +595,7 @@ describe("FormField", () => {
 
   describe("#addValidator", () => {
     it("attaches a validator to the field", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -676,7 +676,7 @@ describe("FormField", () => {
     });
 
     it("aborts the pending validation request when a new request is created", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -746,7 +746,7 @@ describe("FormField", () => {
     });
 
     it("cleans up the error when a validator is removed", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -798,7 +798,7 @@ describe("FormField", () => {
     });
 
     it("cleans up the pending validation request when a validator is removed", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -853,7 +853,7 @@ describe("FormField", () => {
     });
 
     it("does nothing when a validator is removed twice", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -904,7 +904,7 @@ describe("FormField", () => {
     });
 
     it("throws error if the field already has a validator with the same key", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -914,13 +914,13 @@ describe("FormField", () => {
 
       expect(() => {
         field.addValidator("foo", () => {});
-      }).toThrowError("FormField '$root' already has a validator 'foo'");
+      }).toThrowError("Field '$root' already has a validator 'foo'");
     });
   });
 
   describe("#validate", () => {
     it("triggers validation", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -969,7 +969,7 @@ describe("FormField", () => {
     });
 
     it("triggers validation of the children", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1037,7 +1037,7 @@ describe("FormField", () => {
 
   describe("#validateOnce", () => {
     it("runs attached validators with a given value and returns the errors", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1088,7 +1088,7 @@ describe("FormField", () => {
     });
 
     it("includes custom errors in the result", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1138,7 +1138,7 @@ describe("FormField", () => {
     });
 
     it("is aborted when the signal is aborted", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1179,7 +1179,7 @@ describe("FormField", () => {
     });
 
     it("is aborted if the signal has already been aborted", async () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
@@ -1209,7 +1209,7 @@ describe("FormField", () => {
     });
 
     it("runs validators attached to the children with a given value and returns the errors", async () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1279,18 +1279,18 @@ describe("FormField", () => {
 
   describe("#connect", () => {
     it("throws error if the field has no parent", () => {
-      const field = new FormField({
+      const field = new FieldImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
       expect(() => {
         field.connect();
-      }).toThrowError("FormField '$root' has no parent");
+      }).toThrowError("Field '$root' has no parent");
     });
 
     it("throws error when trying to connect two children for the same key", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1300,11 +1300,11 @@ describe("FormField", () => {
       child1.connect();
       expect(() => {
         child2.connect();
-      }).toThrowError("FormField '$root' already has a child 'x'");
+      }).toThrowError("Field '$root' already has a child 'x'");
     });
 
     it("synchronizes a child with the parent only if they are connected", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1354,7 +1354,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the default value of a child with the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1397,7 +1397,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the value of a child with the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1428,7 +1428,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the touched state from a child to the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1455,7 +1455,7 @@ describe("FormField", () => {
     });
 
     it("does not synchronize the touched state from the parent to a child", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1476,7 +1476,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the dirty state from a child to the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1503,7 +1503,7 @@ describe("FormField", () => {
     });
 
     it("does not synchronize the dirty state from the parent to a child", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1524,7 +1524,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the errors from a child to the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1551,7 +1551,7 @@ describe("FormField", () => {
     });
 
     it("does not synchronize the errors from the parent to a child", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1579,7 +1579,7 @@ describe("FormField", () => {
     });
 
     it("synchronizes the pending state from a child to the parent", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1606,7 +1606,7 @@ describe("FormField", () => {
     });
 
     it("does not synchronize the pending state from the parent to a child", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -1629,7 +1629,7 @@ describe("FormField", () => {
 
   describe("#createChild", () => {
     it("creates a child of the field", () => {
-      const parent = new FormField({
+      const parent = new FieldImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
