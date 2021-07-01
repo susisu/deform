@@ -2,9 +2,7 @@ import {
   ChildArrayKeyOf,
   ChildKeyOf,
   Disposable,
-  ElememtType,
   FieldArray,
-  FieldArraySubscriber,
   FieldErrors,
   FieldNode,
   FieldSnapshot,
@@ -13,53 +11,8 @@ import {
   isValid,
   ValidateOnceOptions,
   Validator,
-} from "./form";
-
-const uniqueId = (() => {
-  let uniqueIdCounter = 0;
-  return (): string => {
-    uniqueIdCounter += 1;
-    return uniqueIdCounter.toString();
-  };
-})();
-
-type Getter<A, B> = (a: A) => B;
-type Setter<A, B> = (a: A, b: B) => A;
-
-type Parent<T> = Readonly<{
-  attach: () => void;
-  detach: () => void;
-  setDefaultValue: (defaultValue: T) => void;
-  setValue: (value: T) => void;
-  setIsTouched: (isTouched: boolean) => void;
-  setIsDirty: (isDirty: boolean) => void;
-  setErrors: (errors: FieldErrors) => void;
-  setIsPending: (isPending: boolean) => void;
-}>;
-
-type Child<T> = Readonly<{
-  setDefaultValue: (defaultValue: T) => void;
-  setValue: (value: T) => void;
-  reset: () => void;
-  validate: () => void;
-  validateOnce: (value: T, signal: AbortSignal) => Promise<FieldErrors>;
-}>;
-
-type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;
-
-type MergeErrorsParams = Readonly<{
-  childrenErrors: FieldErrors;
-  validationErrors: FieldErrors;
-  customErrors: FieldErrors;
-}>;
-
-function mergeErrors(params: MergeErrorsParams): FieldErrors {
-  return {
-    ...params.childrenErrors,
-    ...params.validationErrors,
-    ...params.customErrors,
-  };
-}
+} from "../form";
+import { Child, Getter, mergeErrors, Parent, PendingValidation, Setter, uniqueId } from "./shared";
 
 type FieldNodeImplParams<T> = Readonly<{
   path: string;
@@ -718,93 +671,5 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
       )
     );
     return Object.fromEntries(entries);
-  }
-}
-
-export class FieldArrayImpl<T> implements FieldArray<T> {
-  readonly id: string;
-
-  constructor() {
-    this.id = `FieldArray/${uniqueId()}`;
-  }
-
-  getSnapshot(): FieldSnapshot<T> {
-    throw new Error("not implemented");
-  }
-
-  subscribe(_subscriber: FieldSubscriber<T>): Disposable {
-    throw new Error("not implemented");
-  }
-
-  setDefaultValue(_value: T): void {
-    throw new Error("not implemented");
-  }
-
-  setValue(_value: T): void {
-    throw new Error("not implemented");
-  }
-
-  setTouched(): void {
-    throw new Error("not implemented");
-  }
-
-  setDirty(): void {
-    throw new Error("not implemented");
-  }
-
-  setCustomErrors(_errors: FieldErrors): void {
-    throw new Error("not implemented");
-  }
-
-  reset(): void {
-    throw new Error("not implemented");
-  }
-
-  addValidator(_key: string, _validator: Validator<T>): Disposable {
-    throw new Error("not implemented");
-  }
-
-  validate(): void {
-    throw new Error("not implemented");
-  }
-
-  validateOnce(_value: T, _options?: ValidateOnceOptions): Promise<FieldErrors> {
-    throw new Error("not implemented");
-  }
-
-  connect(): Disposable {
-    throw new Error("not implemented");
-  }
-
-  getFields(): ReadonlyArray<FieldNode<ElememtType<T>>> {
-    throw new Error("not implemented");
-  }
-
-  subscribeFields(_subscriber: FieldArraySubscriber<T>): Disposable {
-    throw new Error("not implemented");
-  }
-
-  append(_value: ElememtType<T>): void {
-    throw new Error("not implemented");
-  }
-
-  prepend(_value: ElememtType<T>): void {
-    throw new Error("not implemented");
-  }
-
-  insert(_index: number, _value: ElememtType<T>): void {
-    throw new Error("not implemented");
-  }
-
-  remove(_index: number): void {
-    throw new Error("not implemented");
-  }
-
-  move(_fromIndex: number, _toIndex: number): void {
-    throw new Error("not implemented");
-  }
-
-  swap(_aIndex: number, _bIndex: number): void {
-    throw new Error("not implemented");
   }
 }

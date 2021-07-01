@@ -1,6 +1,6 @@
-import { waitForMicrotasks } from "../__tests__/utils";
-import { ValidationRequest, Validator } from "./form";
-import { FieldNodeImpl } from "./impl";
+import { waitForMicrotasks } from "../../__tests__/utils";
+import { ValidationRequest, Validator } from "../form";
+import { FieldNodeImpl } from "./fieldNode";
 
 describe("FieldNodeImpl", () => {
   describe("#id", () => {
