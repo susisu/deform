@@ -333,6 +333,7 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   validate(): void {
+    // TODO: validate children
     this.runAllValidators();
   }
 
@@ -542,16 +543,14 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private updateChildrenDefaultValue(): void {
-    const defaultValue = this.defaultValue;
     for (const child of this.children.values()) {
-      child.setDefaultValue(defaultValue);
+      child.setDefaultValue(this.defaultValue);
     }
   }
 
   private updateChildrenValue(): void {
-    const value = this.value;
     for (const child of this.children.values()) {
-      child.setValue(value);
+      child.setValue(this.value);
     }
   }
 }
