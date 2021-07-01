@@ -1,6 +1,8 @@
 import {
+  ChildArrayKeyOf,
   ChildKeyOf,
   Disposable,
+  FieldArray,
   FieldErrors,
   FieldNode,
   FieldSnapshot,
@@ -523,6 +525,10 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
       value: getter(this.value),
     });
     return child;
+  }
+
+  createChildArray<K extends ChildArrayKeyOf<T>>(_key: K): FieldArray<T[K]> {
+    throw new Error("not implemented");
   }
 
   private toParent<CT>(

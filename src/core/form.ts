@@ -1,5 +1,7 @@
 export type Disposable = () => void;
 
+export type ElememtType<T> = [T] extends [ReadonlyArray<infer E>] ? E : never;
+
 export interface Field<T> {
   readonly id: string;
   getSnapshot(): FieldSnapshot<T>;
@@ -62,6 +64,7 @@ export function isValid(errors: FieldErrors): boolean {
 export interface FieldNode<T> extends Field<T> {
   connect(): Disposable;
   createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]>;
+  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): FieldArray<T[K]>;
 }
 
 export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
@@ -72,3 +75,25 @@ type NonIndexKey<K extends string | number | symbol> =
   : number extends K ? never
   : symbol extends K ? never
   : K;
+
+export type ChildArrayKeyOf<T> = SelectChildArrayKey<T, ChildKeyOf<T>>;
+
+type SelectChildArrayKey<T, K extends keyof T> =
+  // prettier-ignore
+  K extends unknown
+    ? (T[K] extends readonly unknown[] ? K : never)
+    : never;
+
+export interface FieldArray<T> extends Field<T> {
+  connect(): Disposable;
+  getFields(): ReadonlyArray<FieldNode<ElememtType<T>>>;
+  subscribeFields(subscriber: FieldArraySubscriber<T>): Disposable;
+  append(value: ElememtType<T>): void;
+  prepend(value: ElememtType<T>): void;
+  insert(index: number, value: ElememtType<T>): void;
+  remove(index: number): void;
+  move(fromIndex: number, toIndex: number): void;
+  swap(aIndex: number, bIndex: number): void;
+}
+
+export type FieldArraySubscriber<T> = (fields: ReadonlyArray<FieldNode<ElememtType<T>>>) => void;
