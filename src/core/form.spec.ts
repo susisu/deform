@@ -1,4 +1,4 @@
-import { isEqualErrors, isValid } from "./field";
+import { isEqualErrors, isValid } from "./form";
 
 describe("isEqualErrors", () => {
   const errors = { foo: true };

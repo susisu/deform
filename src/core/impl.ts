@@ -9,7 +9,7 @@ import {
   isValid,
   ValidateOnceOptions,
   Validator,
-} from "./field";
+} from "./form";
 
 const uniqueId = (() => {
   let uniqueIdCounter = 0;
