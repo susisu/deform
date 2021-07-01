@@ -544,16 +544,13 @@ export class FormField<T> implements FieldNode<T> {
     };
   }
 
-  private attachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): Disposable {
+  private attachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
     if (this.children.has(key)) {
       throw new Error(`FormField '${this.path}' already has a child '${String(key)}'`);
     }
     this.children.set(key, child);
     child.setDefaultValue(this.defaultValue);
     child.setValue(this.value);
-    return () => {
-      this.detachChild(key, child);
-    };
   }
 
   private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
