@@ -42,7 +42,7 @@ export class FormField<T> implements FieldNode<T> {
   private customErrors: FieldErrors;
 
   private validators: Map<string, Validator<T>>;
-  private validationStatuses: Map<string, ValidationStatus>;
+  private pendingValidations: Map<string, PendingValidation>;
 
   private touchedChildKeys: Set<ChildKeyOf<T>>;
   private dirtyChildKeys: Set<ChildKeyOf<T>>;
@@ -70,7 +70,7 @@ export class FormField<T> implements FieldNode<T> {
     this.customErrors = {};
 
     this.validators = new Map();
-    this.validationStatuses = new Map();
+    this.pendingValidations = new Map();
 
     this.touchedChildKeys = new Set();
     this.dirtyChildKeys = new Set();
@@ -121,17 +121,9 @@ export class FormField<T> implements FieldNode<T> {
     });
   }
 
-  // depends on: pendingChildKeys, validationStatuses
+  // depends on: pendingValidations, pendingChildKeys
   private calcSnapshotIsPending(): boolean {
-    if (this.pendingChildKeys.size > 0) {
-      return true;
-    }
-    for (const status of this.validationStatuses.values()) {
-      if (status.type === "pending") {
-        return true;
-      }
-    }
-    return false;
+    return this.pendingValidations.size > 0 || this.pendingChildKeys.size > 0;
   }
 
   getSnapshot(): FieldSnapshot<T> {
@@ -296,7 +288,7 @@ export class FormField<T> implements FieldNode<T> {
     if (this.validators.get(key) === validator) {
       this.abortPendingValidation(key);
 
-      this.validationStatuses.delete(key);
+      this.pendingValidations.delete(key);
       this.updateSnapshotIsPending();
 
       const { [key]: _, ...errors } = this.validationErrors;
@@ -317,7 +309,7 @@ export class FormField<T> implements FieldNode<T> {
 
     const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
-    this.validationStatuses.set(key, { type: "pending", requestId, controller });
+    this.pendingValidations.set(key, { requestId, controller });
     this.updateSnapshotIsPending();
 
     validator({
@@ -334,17 +326,17 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   private abortPendingValidation(key: string): void {
-    const status = this.validationStatuses.get(key);
-    if (status && status.type === "pending") {
-      status.controller.abort();
+    const validation = this.pendingValidations.get(key);
+    if (validation) {
+      validation.controller.abort();
     }
   }
 
   private resolveValidation(key: string, requestId: string, error: unknown): void {
-    const status = this.validationStatuses.get(key);
-    if (status && status.type === "pending" && status.requestId === requestId) {
+    const validation = this.pendingValidations.get(key);
+    if (validation && validation.requestId === requestId) {
       this.setValidationErrors({ ...this.validationErrors, [key]: error });
-      this.validationStatuses.set(key, { type: "done" });
+      this.pendingValidations.delete(key);
       this.updateSnapshotIsPending();
     }
   }
@@ -667,9 +659,7 @@ function mergeErrors(params: MergeErrorsParams): FieldErrors {
   };
 }
 
-type ValidationStatus =
-  | Readonly<{ type: "pending"; requestId: string; controller: AbortController }>
-  | Readonly<{ type: "done" }>;
+type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;
 
 type Parent<T> = Readonly<{
   attach: () => void;
