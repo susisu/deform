@@ -14,7 +14,7 @@ import {
 } from "../form";
 import { Child, Getter, mergeErrors, Parent, PendingValidation, Setter, uniqueId } from "./shared";
 
-type FieldNodeImplParams<T> = Readonly<{
+export type FieldNodeImplParams<T> = Readonly<{
   path: string;
   parent?: Parent<T> | undefined;
   defaultValue: T;
@@ -40,10 +40,10 @@ export class FieldNodeImpl<T> implements FieldNode<T> {
   private validators: Map<string, Validator<T>>;
   private pendingValidations: Map<string, PendingValidation>;
 
-  private touchedChildKeys: Set<ChildKeyOf<T>>;
-  private dirtyChildKeys: Set<ChildKeyOf<T>>;
-  private childrenErrors: Map<ChildKeyOf<T>, FieldErrors>;
-  private pendingChildKeys: Set<ChildKeyOf<T>>;
+  private touchedChildKeys: Set<PropertyKey>;
+  private dirtyChildKeys: Set<PropertyKey>;
+  private childrenErrors: Map<PropertyKey, FieldErrors>;
+  private pendingChildKeys: Set<PropertyKey>;
 
   private snapshot: FieldSnapshot<T>;
   private subscribers: Set<FieldSubscriber<T>>;

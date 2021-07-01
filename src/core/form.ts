@@ -69,7 +69,7 @@ export interface FieldNode<T> extends Field<T> {
 
 export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
 
-type NonIndexKey<K extends string | number | symbol> =
+type NonIndexKey<K extends PropertyKey> =
   // prettier-ignore
   string extends K ? never
   : number extends K ? never
