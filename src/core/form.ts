@@ -30,7 +30,7 @@ export class FormField<T> implements FieldNode<T> {
 
   private parent: Parent<T> | undefined;
   private children: Map<ChildKeyOf<T>, Child<T>>;
-  private connectionStatus: ConnectionStatus;
+  private isConnected: boolean;
 
   private defaultValue: T;
   private value: T;
@@ -53,7 +53,7 @@ export class FormField<T> implements FieldNode<T> {
 
     this.parent = params.parent;
     this.children = new Map();
-    this.connectionStatus = { type: "disconnected" };
+    this.isConnected = false;
 
     this.defaultValue = params.defaultValue;
     this.value = params.value;
@@ -254,14 +254,14 @@ export class FormField<T> implements FieldNode<T> {
 
   private removeValidator(key: string, validator: Validator<T>): void {
     if (this.validators.get(key) === validator) {
-      this.validators.delete(key);
-
       this.abortPendingValidation(key);
       this.validationStatuses.delete(key);
       this.updateSnapshotIsPending();
 
       const { [key]: _, ...errors } = this.validationErrors;
       this.setValidationErrors(errors);
+
+      this.validators.delete(key);
     }
   }
 
@@ -378,11 +378,112 @@ export class FormField<T> implements FieldNode<T> {
   }
 
   connect(): Disposable {
-    throw new Error("not implemented");
+    if (!this.parent) {
+      throw new Error(`FormField '${this.path}' has no parent`);
+    }
+    this.isConnected = true;
+    this.parent.attach();
+    this.parent.setIsTouched(this.snapshot.isTouched);
+    this.parent.setIsDirty(this.snapshot.isDirty);
+    this.parent.setErrors(this.snapshot.errors);
+    return () => {
+      this.disconnect();
+    };
   }
 
-  createChild<K extends ChildKeyOf<T>>(_key: K): FieldNode<T[K]> {
-    throw new Error("not implemented");
+  private disconnect(): void {
+    if (!this.parent) {
+      throw new Error(`FormField '${this.path}' has no parent`);
+    }
+    if (this.isConnected) {
+      this.parent.detach();
+      this.isConnected = false;
+    }
+  }
+
+  createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]> {
+    const getter: Getter<T, T[K]> = value => value[key];
+    const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
+    const child: FormField<T[K]> = new FormField({
+      path: `${this.path}.${String(key)}`,
+      parent: this.toParent(key, setter, () => child.toChild(getter)),
+      defaultValue: getter(this.defaultValue),
+      value: getter(this.value),
+    });
+    return child;
+  }
+
+  private toParent<CT>(
+    key: ChildKeyOf<T>,
+    setter: Setter<T, CT>,
+    lazyChild: () => Child<T>
+  ): Parent<CT> {
+    let child: Child<T> | undefined = undefined;
+    return {
+      attach: () => {
+        if (!child) {
+          child = lazyChild();
+        }
+        this.attachChild(key, child);
+      },
+      detach: () => {
+        if (!child) {
+          return;
+        }
+        this.detachChild(key, child);
+      },
+      setDefaultValue: _defaultValue => {
+        throw new Error("not implemented");
+      },
+      setValue: value => {
+        this.setValue(setter(this.value, value));
+      },
+      setIsTouched: _isTouched => {
+        throw new Error("not implemented");
+      },
+      setIsDirty: _isDirty => {
+        throw new Error("not implemented");
+      },
+      setErrors: _errors => {
+        throw new Error("not implemented");
+      },
+    };
+  }
+
+  private toChild<PT>(getter: Getter<PT, T>): Child<PT> {
+    return {
+      setDefaultValue: _defaultValue => {
+        throw new Error("not implemented");
+      },
+      setValue: value => {
+        this.setValue(getter(value));
+      },
+      validate: () => {
+        throw new Error("not implemented");
+      },
+      validateOnce: _value => {
+        throw new Error("not implemented");
+      },
+    };
+  }
+
+  private attachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): Disposable {
+    if (this.children.has(key)) {
+      throw new Error(`FormField '${this.path}' already has a child '${String(key)}'`);
+    }
+    this.children.set(key, child);
+    child.setDefaultValue(this.defaultValue);
+    child.setValue(this.value);
+    return () => {
+      this.detachChild(key, child);
+    };
+  }
+
+  private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
+    if (this.children.get(key) === child) {
+      // TODO: cleanup
+      this.children.delete(key);
+    }
   }
 }
 
@@ -415,7 +516,8 @@ type ValidationStatus =
   | Readonly<{ type: "done" }>;
 
 type Parent<T> = Readonly<{
-  connect: () => Disposable;
+  attach: () => void;
+  detach: () => void;
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
   setIsTouched: (isTouched: boolean) => void;
@@ -426,10 +528,9 @@ type Parent<T> = Readonly<{
 type Child<T> = Readonly<{
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
-  validate: (value: T) => void;
+  validate: () => void;
   validateOnce: (value: T) => Promise<FieldErrors>;
 }>;
 
-type ConnectionStatus =
-  | Readonly<{ type: "disconnected" }>
-  | Readonly<{ type: "connected"; onDisconnect: () => void }>;
+type Getter<A, B> = (a: A) => B;
+type Setter<A, B> = (a: A, b: B) => A;
