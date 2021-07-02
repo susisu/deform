@@ -1,4 +1,12 @@
-import { ChildArrayKeyOf, ChildKeyOf, FieldArray, FieldErrors, FieldNode, isValid } from "../form";
+import {
+  ChildArrayKeyOf,
+  ChildKeyOf,
+  ElementType,
+  FieldArray,
+  FieldErrors,
+  FieldNode,
+  isValid,
+} from "../form";
 import { FieldImpl } from "./field";
 import { Child, Getter, Parent, Setter } from "./shared";
 
@@ -24,10 +32,20 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
   }
 
   createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]> {
+    const path = `${this.path}.${String(key)}`;
+    if (
+      Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||
+      Object.getPrototypeOf(this.value) !== Object.prototype
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `You are creating a child field '${path}', but the value of '${this.path}' is not a pure object. This may cause unexpected errors.`
+      );
+    }
     const getter: Getter<T, T[K]> = value => value[key];
     const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
     const field: FieldNodeImpl<T[K]> = new FieldNodeImpl({
-      path: `${this.path}.${String(key)}`,
+      path,
       parent: this.toParent(key, setter, () => field.toChild(getter)),
       defaultValue: getter(this.defaultValue),
       value: getter(this.value),
@@ -35,7 +53,26 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
     return field;
   }
 
-  createChildArray<K extends ChildArrayKeyOf<T>>(_key: K): FieldArray<T[K]> {
+  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): FieldArray<ElementType<T[K]>> {
+    const path = `${this.path}.${String(key)}`;
+    if (
+      Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||
+      Object.getPrototypeOf(this.value) !== Object.prototype
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `You are creating a child field '${path}', but the value of '${this.path}' is not a pure object. This may cause unexpected errors.`
+      );
+    }
+    if (
+      Object.getPrototypeOf(this.defaultValue[key]) !== Array.prototype ||
+      Object.getPrototypeOf(this.value[key]) !== Array.prototype
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `You are creating a field array '${path}', but the value of '${path}' is not a pure array. This may cause unexpected errors.`
+      );
+    }
     throw new Error("not implemented");
   }
 

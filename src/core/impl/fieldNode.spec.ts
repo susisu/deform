@@ -1644,5 +1644,22 @@ describe("FieldNodeImpl", () => {
         isPending: false,
       });
     });
+
+    it("warns if one creates a child field of a non-pure object", () => {
+      const spy = jest.spyOn(console, "warn");
+      spy.mockImplementation(() => {});
+
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: new Date(),
+        value: new Date(),
+      });
+      parent.createChild("getTime");
+      expect(spy).toHaveBeenLastCalledWith(
+        "You are creating a child field '$root.getTime', but the value of '$root' is not a pure object. This may cause unexpected errors."
+      );
+
+      spy.mockRestore();
+    });
   });
 });

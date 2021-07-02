@@ -1,25 +1,15 @@
-import {
-  Disposable,
-  ElementType,
-  FieldArray,
-  FieldArraySubscriber,
-  FieldErrors,
-  FieldNode,
-} from "../form";
+import { Disposable, FieldArray, FieldArraySubscriber, FieldErrors, FieldNode } from "../form";
 import { FieldImpl } from "./field";
 import { Parent } from "./shared";
 
 export type FieldArrayImplParams<T> = Readonly<{
   path: string;
-  parent?: Parent<T> | undefined;
-  defaultValue: T;
-  value: T;
+  parent?: Parent<readonly T[]> | undefined;
+  defaultValue: readonly T[];
+  value: readonly T[];
 }>;
 
-export class FieldArrayImpl<T extends readonly unknown[]>
-  extends FieldImpl<T>
-  implements FieldArray<T>
-{
+export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements FieldArray<T> {
   constructor(params: FieldArrayImplParams<T>) {
     super({
       tag: "FieldArray",
@@ -30,7 +20,7 @@ export class FieldArrayImpl<T extends readonly unknown[]>
     });
   }
 
-  getFields(): ReadonlyArray<FieldNode<ElementType<T>>> {
+  getFields(): ReadonlyArray<FieldNode<T>> {
     throw new Error("not implemented");
   }
 
@@ -38,15 +28,15 @@ export class FieldArrayImpl<T extends readonly unknown[]>
     throw new Error("not implemented");
   }
 
-  append(_value: ElementType<T>): void {
+  append(_value: T): void {
     throw new Error("not implemented");
   }
 
-  prepend(_value: ElementType<T>): void {
+  prepend(_value: T): void {
     throw new Error("not implemented");
   }
 
-  insert(_index: number, _value: ElementType<T>): void {
+  insert(_index: number, _value: T): void {
     throw new Error("not implemented");
   }
 
@@ -78,7 +68,7 @@ export class FieldArrayImpl<T extends readonly unknown[]>
     throw new Error("not implemented");
   }
 
-  protected validateChildrenOnce(_value: T, _signal: AbortSignal): Promise<FieldErrors> {
+  protected validateChildrenOnce(_value: readonly T[], _signal: AbortSignal): Promise<FieldErrors> {
     throw new Error("not implemented");
   }
 }
