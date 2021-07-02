@@ -26,13 +26,13 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
   createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]> {
     const getter: Getter<T, T[K]> = value => value[key];
     const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
-    const child: FieldNodeImpl<T[K]> = new FieldNodeImpl({
+    const field: FieldNodeImpl<T[K]> = new FieldNodeImpl({
       path: `${this.path}.${String(key)}`,
-      parent: this.toParent(key, setter, () => child.toChild(getter)),
+      parent: this.toParent(key, setter, () => field.toChild(getter)),
       defaultValue: getter(this.defaultValue),
       value: getter(this.value),
     });
-    return child;
+    return field;
   }
 
   createChildArray<K extends ChildArrayKeyOf<T>>(_key: K): FieldArray<T[K]> {
