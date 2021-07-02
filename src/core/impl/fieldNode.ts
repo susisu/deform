@@ -23,7 +23,7 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
 
   constructor(params: FieldNodeImplParams<T>) {
     super({
-      tag: "FieldNode",
+      className: "FieldNode",
       path: params.path,
       parent: params.parent,
       defaultValue: params.defaultValue,

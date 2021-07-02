@@ -12,7 +12,7 @@ export type FieldArrayImplParams<T> = Readonly<{
 export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements FieldArray<T> {
   constructor(params: FieldArrayImplParams<T>) {
     super({
-      tag: "FieldArray",
+      className: "FieldArray",
       path: params.path,
       parent: params.parent,
       defaultValue: params.defaultValue,

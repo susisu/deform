@@ -12,7 +12,7 @@ import {
 import { Child, Getter, mergeErrors, Parent, PendingValidation, uniqueId } from "./shared";
 
 export type FieldImplParams<T> = Readonly<{
-  tag: string;
+  className: string;
   path: string;
   parent: Parent<T> | undefined;
   defaultValue: T;
@@ -21,7 +21,7 @@ export type FieldImplParams<T> = Readonly<{
 
 export abstract class FieldImpl<T> implements Field<T> {
   readonly id: string;
-  private tag: string;
+  private className: string;
   protected path: string;
 
   protected parent: Parent<T> | undefined;
@@ -48,8 +48,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   private isDispatchQueued: boolean;
 
   constructor(params: FieldImplParams<T>) {
-    this.id = `${params.tag}/${uniqueId()}`;
-    this.tag = params.tag;
+    this.id = `${params.className}/${uniqueId()}`;
+    this.className = params.className;
     this.path = params.path;
 
     this.parent = params.parent;
@@ -299,7 +299,7 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   addValidator(key: string, validator: Validator<T>): Disposable {
     if (this.validators.has(key)) {
-      throw new Error(`${this.tag} '${this.path}' already has a validator '${key}'`);
+      throw new Error(`${this.className} '${this.path}' already has a validator '${key}'`);
     }
     this.validators.set(key, validator);
     this.runValidator(key);
@@ -494,10 +494,10 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   connect(): Disposable {
     if (!this.parent) {
-      throw new Error(`${this.tag} '${this.path}' has no parent`);
+      throw new Error(`${this.className} '${this.path}' has no parent`);
     }
     if (this.isConnected) {
-      throw new Error(`${this.tag} '${this.path}' is already connected`);
+      throw new Error(`${this.className} '${this.path}' is already connected`);
     }
     this.isConnected = true;
     this.parent.attach();
