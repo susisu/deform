@@ -496,6 +496,9 @@ export abstract class FieldImpl<T> implements Field<T> {
     if (!this.parent) {
       throw new Error(`${this.tag} '${this.path}' has no parent`);
     }
+    if (this.isConnected) {
+      throw new Error(`${this.tag} '${this.path}' is already connected`);
+    }
     this.isConnected = true;
     this.parent.attach();
     this.parent.setDefaultValue(this.snapshot.defaultValue);

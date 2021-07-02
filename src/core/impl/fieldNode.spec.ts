@@ -1289,6 +1289,19 @@ describe("FieldNodeImpl", () => {
       }).toThrowError("FieldNode '$root' has no parent");
     });
 
+    it("throws error if the field is already connected", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(() => {
+        child.connect();
+      }).toThrowError("FieldNode '$root.x' is already connected");
+    });
+
     it("throws error when trying to connect two children for the same key", () => {
       const parent = new FieldNodeImpl({
         path: "$root",
