@@ -1,6 +1,6 @@
 import {
   Disposable,
-  ElememtType,
+  ElementType,
   FieldArray,
   FieldArraySubscriber,
   FieldErrors,
@@ -30,7 +30,7 @@ export class FieldArrayImpl<T extends readonly unknown[]>
     });
   }
 
-  getFields(): ReadonlyArray<FieldNode<ElememtType<T>>> {
+  getFields(): ReadonlyArray<FieldNode<ElementType<T>>> {
     throw new Error("not implemented");
   }
 
@@ -38,15 +38,15 @@ export class FieldArrayImpl<T extends readonly unknown[]>
     throw new Error("not implemented");
   }
 
-  append(_value: ElememtType<T>): void {
+  append(_value: ElementType<T>): void {
     throw new Error("not implemented");
   }
 
-  prepend(_value: ElememtType<T>): void {
+  prepend(_value: ElementType<T>): void {
     throw new Error("not implemented");
   }
 
-  insert(_index: number, _value: ElememtType<T>): void {
+  insert(_index: number, _value: ElementType<T>): void {
     throw new Error("not implemented");
   }
 
