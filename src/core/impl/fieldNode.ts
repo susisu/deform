@@ -8,6 +8,7 @@ import {
   isValid,
 } from "../form";
 import { FieldImpl } from "./field";
+import { FieldArrayImpl } from "./fieldArray";
 import { Child, Getter, Parent, Setter } from "./shared";
 
 export type FieldNodeImplParams<T> = Readonly<{
@@ -43,7 +44,7 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
       );
     }
     const getter: Getter<T, T[K]> = value => value[key];
-    const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
+    const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x }); // this is actually unsafe
     const field: FieldNodeImpl<T[K]> = new FieldNodeImpl({
       path,
       parent: this.toParent(key, setter, () => field.toChild(getter)),
@@ -73,7 +74,16 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
         `You are creating a field array '${path}', but the value of '${path}' is not a pure array. This may cause unexpected errors.`
       );
     }
-    throw new Error("not implemented");
+    type E = ElementType<T[K]>;
+    const getter: Getter<T, readonly E[]> = value => value[key];
+    const setter: Setter<T, readonly E[]> = (value, x) => ({ ...value, [key]: x }); // this is actually unsafe
+    const fieldArray: FieldArrayImpl<E> = new FieldArrayImpl({
+      path,
+      parent: this.toParent(key, setter, () => fieldArray.toChild(getter)),
+      defaultValue: getter(this.defaultValue),
+      value: getter(this.value),
+    });
+    return fieldArray;
   }
 
   private toParent<CT>(
@@ -126,28 +136,6 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
           this.setChildIsPending(key, isPending);
         }
       },
-    };
-  }
-
-  private toChild<PT>(getter: Getter<PT, T>): Child<PT> {
-    return {
-      setDefaultValue: defaultValue => {
-        if (this.isConnected) {
-          this.setDefaultValue(getter(defaultValue));
-        }
-      },
-      setValue: value => {
-        if (this.isConnected) {
-          this.setValue(getter(value));
-        }
-      },
-      reset: () => {
-        this.reset();
-      },
-      validate: () => {
-        this.validate();
-      },
-      validateOnce: (value, signal) => this.validateOnce(getter(value), { signal }),
     };
   }
 

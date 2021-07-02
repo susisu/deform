@@ -9,7 +9,7 @@ import {
   ValidateOnceOptions,
   Validator,
 } from "../form";
-import { mergeErrors, Parent, PendingValidation, uniqueId } from "./shared";
+import { Child, Getter, mergeErrors, Parent, PendingValidation, uniqueId } from "./shared";
 
 export type FieldImplParams<T> = Readonly<{
   tag: string;
@@ -518,6 +518,28 @@ export abstract class FieldImpl<T> implements Field<T> {
       this.parent.detach();
       this.isConnected = false;
     }
+  }
+
+  toChild<PT>(getter: Getter<PT, T>): Child<PT> {
+    return {
+      setDefaultValue: defaultValue => {
+        if (this.isConnected) {
+          this.setDefaultValue(getter(defaultValue));
+        }
+      },
+      setValue: value => {
+        if (this.isConnected) {
+          this.setValue(getter(value));
+        }
+      },
+      reset: () => {
+        this.reset();
+      },
+      validate: () => {
+        this.validate();
+      },
+      validateOnce: (value, signal) => this.validateOnce(getter(value), { signal }),
+    };
   }
 
   private updateParentDefaultValue(): void {

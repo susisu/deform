@@ -1662,4 +1662,65 @@ describe("FieldNodeImpl", () => {
       spy.mockRestore();
     });
   });
+
+  describe("#createChildArray", () => {
+    it("creates a child array of the field", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(child.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [42],
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: false,
+      });
+    });
+
+    it("warns if one creates a child field array of a non-pure object", () => {
+      const spy = jest.spyOn(console, "warn");
+      spy.mockImplementation(() => {});
+
+      const T = class {
+        get x(): number[] {
+          return [];
+        }
+      };
+
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: new T(),
+        value: new T(),
+      });
+      parent.createChildArray("x");
+      expect(spy).toHaveBeenLastCalledWith(
+        "You are creating a child field '$root.x', but the value of '$root' is not a pure object. This may cause unexpected errors."
+      );
+
+      spy.mockRestore();
+    });
+
+    it("warns if one creates a field array of a non-pure array", () => {
+      const spy = jest.spyOn(console, "warn");
+      spy.mockImplementation(() => {});
+
+      const T = class extends Array {};
+
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: new T() },
+        value: { x: new T() },
+      });
+      parent.createChildArray("x");
+      expect(spy).toHaveBeenLastCalledWith(
+        "You are creating a field array '$root.x', but the value of '$root.x' is not a pure array. This may cause unexpected errors."
+      );
+
+      spy.mockRestore();
+    });
+  });
 });
