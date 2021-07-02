@@ -16,7 +16,10 @@ export type FieldArrayImplParams<T> = Readonly<{
   value: T;
 }>;
 
-export class FieldArrayImpl<T> extends FieldImpl<T> implements FieldArray<T> {
+export class FieldArrayImpl<T extends readonly unknown[]>
+  extends FieldImpl<T>
+  implements FieldArray<T>
+{
   constructor(params: FieldArrayImplParams<T>) {
     super({
       tag: "FieldArray",

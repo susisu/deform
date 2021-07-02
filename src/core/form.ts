@@ -1,6 +1,6 @@
 export type Disposable = () => void;
 
-export type ElememtType<T> = [T] extends [ReadonlyArray<infer E>] ? E : never;
+export type ElememtType<T extends readonly unknown[]> = T[number];
 
 export interface Field<T> {
   readonly id: string;
@@ -84,7 +84,7 @@ type SelectChildArrayKey<T, K extends keyof T> =
     ? (T[K] extends readonly unknown[] ? K : never)
     : never;
 
-export interface FieldArray<T> extends Field<T> {
+export interface FieldArray<T extends readonly unknown[]> extends Field<T> {
   connect(): Disposable;
   getFields(): ReadonlyArray<FieldNode<ElememtType<T>>>;
   subscribeFields(subscriber: FieldArraySubscriber<T>): Disposable;
@@ -96,4 +96,6 @@ export interface FieldArray<T> extends Field<T> {
   swap(aIndex: number, bIndex: number): void;
 }
 
-export type FieldArraySubscriber<T> = (fields: ReadonlyArray<FieldNode<ElememtType<T>>>) => void;
+export type FieldArraySubscriber<T extends readonly unknown[]> = (
+  fields: ReadonlyArray<FieldNode<ElememtType<T>>>
+) => void;
