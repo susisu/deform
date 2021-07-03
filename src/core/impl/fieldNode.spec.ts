@@ -1689,7 +1689,7 @@ describe("FieldNodeImpl", () => {
         value: [42],
         isTouched: false,
         isDirty: false,
-        errors: expect.any(Object), // TODO
+        errors: { 0: false },
         isPending: false,
       });
       expect(child.getFields().map(field => field.getSnapshot())).toEqual([

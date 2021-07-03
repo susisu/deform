@@ -41,6 +41,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   private touchedChildKeys: Set<PropertyKey>;
   private dirtyChildKeys: Set<PropertyKey>;
   private childrenErrors: Map<PropertyKey, Errors>;
+  private childrenErrorsKeyMapper: KeyMapper;
   private pendingChildKeys: Set<PropertyKey>;
 
   private snapshot: Snapshot<T>;
@@ -73,6 +74,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.touchedChildKeys = new Set();
     this.dirtyChildKeys = new Set();
     this.childrenErrors = new Map();
+    this.childrenErrorsKeyMapper = key => key;
     this.pendingChildKeys = new Set();
 
     this.snapshot = {
@@ -107,10 +109,12 @@ export abstract class FieldImpl<T> implements Field<T> {
     return this.isDirty || this.dirtyChildKeys.size > 0;
   }
 
-  // depends on: childrenErrors, validationErrors, customErrors
+  // depends on: childrenErrors, childrenErrorsKeyMapper, validationErrors, customErrors
   private calcSnapshotErrors(): Errors {
     const childrenErrors = Object.fromEntries(
-      [...this.childrenErrors].map(([key, errors]) => [key, !isValid(errors)] as const)
+      [...this.childrenErrors].map(
+        ([key, errors]) => [this.childrenErrorsKeyMapper(key), !isValid(errors)] as const
+      )
     );
     return mergeErrors({
       childrenErrors,
@@ -279,6 +283,14 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   setDirty(): void {
     this.setIsDirty(true);
+  }
+
+  protected setChildrenErrorsKeyMapper(mapper: KeyMapper): void {
+    if (this.childrenErrorsKeyMapper === mapper) {
+      return;
+    }
+    this.childrenErrorsKeyMapper = mapper;
+    this.updateSnapshotErrors();
   }
 
   private setValidationErrors(errors: Errors): void {
@@ -597,3 +609,5 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected abstract validateChildren(): void;
   protected abstract validateChildrenOnce(value: T, signal: AbortSignal): Promise<Errors>;
 }
+
+export type KeyMapper = (key: PropertyKey) => PropertyKey;

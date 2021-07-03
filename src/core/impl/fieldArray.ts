@@ -7,7 +7,7 @@ import {
   FieldsSubscriber,
   isValid,
 } from "../form";
-import { FieldImpl } from "./field";
+import { FieldImpl, KeyMapper } from "./field";
 import { FieldNodeImpl } from "./fieldNode";
 import { Child, Getter, Parent, Setter, uniqueId } from "./shared";
 
@@ -71,6 +71,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.fields = fields;
     this.indexByKey = indexByKey;
     this.keyByIndex = keyByIndex;
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
 
     for (const field of fields) {
       field.connect();
@@ -277,6 +278,18 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     );
     return Object.fromEntries(entries);
   }
+}
+
+function createChildrenErrorsKeyMapper(indexByKey: ReadonlyMap<string, number>): KeyMapper {
+  return key => {
+    if (typeof key === "string") {
+      const index = indexByKey.get(key);
+      if (index !== undefined) {
+        return index;
+      }
+    }
+    return key;
+  };
 }
 
 function set<T>(arr: readonly T[], index: number, x: T): T[] {
