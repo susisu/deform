@@ -193,8 +193,6 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       throw new Error(`FieldArray '${this.path}' already has a child '${String(key)}'`);
     }
     this.children.set(key, child);
-    child.setDefaultValue(this.defaultValue);
-    child.setValue(this.value);
   }
 
   private detachChild(key: string, child: Child<readonly T[]>): void {

@@ -1692,6 +1692,16 @@ describe("FieldNodeImpl", () => {
         errors: expect.any(Object), // TODO
         isPending: false,
       });
+      expect(child.getFields().map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 42,
+          value: 42,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
     });
 
     it("warns if one creates a child field array of a non-pure object", () => {
