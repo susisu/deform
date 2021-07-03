@@ -1362,4 +1362,124 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe("#validate", () => {
+    it("triggers validation", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: [42],
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      request1.resolve(true);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
+      );
+
+      fieldArray.validate();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: [42],
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: true })
+      );
+
+      request2.resolve(false);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: false }, isPending: false })
+      );
+    });
+
+    it("triggers validation of the child fields", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields = fieldArray.getFields();
+      expect(fields).toHaveLength(1);
+      const field = fields[0];
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      request1.resolve({});
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: true }, isPending: false })
+      );
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+      );
+
+      fieldArray.validate();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: 42,
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: true }, isPending: true })
+      );
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: true })
+      );
+
+      request2.resolve(null);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: null }, isPending: false })
+      );
+    });
+  });
 });
