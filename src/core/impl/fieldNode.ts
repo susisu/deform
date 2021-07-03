@@ -29,7 +29,10 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       defaultValue: params.defaultValue,
       value: params.value,
     });
+
     this.children = new Map();
+
+    this.isInitializing = false;
   }
 
   createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]> {

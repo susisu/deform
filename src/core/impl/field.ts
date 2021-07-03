@@ -47,7 +47,11 @@ export abstract class FieldImpl<T> implements Field<T> {
   private subscribers: Set<Subscriber<T>>;
   private isDispatchQueued: boolean;
 
+  protected isInitializing: boolean;
+
   constructor(params: FieldImplParams<T>) {
+    this.isInitializing = true;
+
     this.id = `${params.className}/${uniqueId()}`;
     this.className = params.className;
     this.path = params.path;
@@ -136,7 +140,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   }
 
   private queueDispatch(): void {
-    if (this.isDispatchQueued) {
+    if (this.isInitializing || this.isDispatchQueued) {
       return;
     }
     this.isDispatchQueued = true;

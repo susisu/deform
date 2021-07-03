@@ -37,6 +37,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       defaultValue: params.defaultValue,
       value: params.value,
     });
+
     this.children = new Map();
 
     this.current = [];
@@ -48,6 +49,8 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.isFieldsDispatchQueued = false;
 
     this.sync(this.value);
+
+    this.isInitializing = false;
   }
 
   private sync(value: readonly T[]): void {
@@ -72,12 +75,13 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     for (const field of fields) {
       field.connect();
     }
+
+    this.queueFieldsDispatch();
   }
 
   protected override beforeSetValue(value: readonly T[]): void {
     if (this.current !== value) {
       this.sync(value);
-      this.queueFieldsDispatch();
     }
   }
 
@@ -97,7 +101,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   private queueFieldsDispatch(): void {
-    if (this.isFieldsDispatchQueued) {
+    if (this.isInitializing || this.isFieldsDispatchQueued) {
       return;
     }
     this.isFieldsDispatchQueued = true;
