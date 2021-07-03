@@ -298,6 +298,9 @@ function createChildrenErrorsKeyMapper(indexByKey: ReadonlyMap<string, number>):
   };
 }
 
-function set<T>(arr: readonly T[], index: number, x: T): T[] {
-  return [...arr.slice(0, index), x, ...arr.slice(index + 1)];
+function set<T>(xs: readonly T[], index: number, x: T): readonly T[] {
+  if (Object.is(xs[index], x)) {
+    return xs;
+  }
+  return [...xs.slice(0, index), x, ...xs.slice(index + 1)];
 }
