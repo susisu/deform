@@ -1184,12 +1184,16 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      request2.resolve(false);
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(3);
       expect(field.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: true }, isPending: false })
+        expect.objectContaining({ errors: { foo: true }, isPending: true })
       );
 
-      field.setValue(1);
+      request2.resolve(false);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: true })
+      );
 
       // the value at the time when 'validateOnce' is called is used
       await expect(promise).resolves.toEqual({
@@ -1379,15 +1383,22 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      request2.resolve(null);
+      parent.setValue({ x: 2, y: 3 });
+      expect(validator).toHaveBeenCalledTimes(3);
       expect(parent.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { x: true }, isPending: false })
+        expect.objectContaining({ errors: { x: true }, isPending: true })
       );
       expect(child.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: {} }, isPending: false })
+        expect.objectContaining({ errors: { foo: {} }, isPending: true })
       );
 
-      parent.setValue({ x: 2, y: 3 });
+      request2.resolve(null);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: true })
+      );
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: {} }, isPending: true })
+      );
 
       // the value at the time when 'validateOnce' is called is used
       await expect(promise).resolves.toEqual({
