@@ -1,10 +1,10 @@
 import {
   ChildArrayKeyOf,
+  ChildFieldArray,
+  ChildFieldNode,
   ChildKeyOf,
   ElementType,
-  FieldArray,
   FieldErrors,
-  FieldNode,
   isValid,
 } from "../form";
 import { FieldImpl } from "./field";
@@ -18,7 +18,7 @@ export type FieldNodeImplParams<T> = Readonly<{
   value: T;
 }>;
 
-export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
+export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> {
   private children: Map<ChildKeyOf<T>, Child<T>>;
 
   constructor(params: FieldNodeImplParams<T>) {
@@ -32,7 +32,7 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
     this.children = new Map();
   }
 
-  createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]> {
+  createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]> {
     const path = `${this.path}.${String(key)}`;
     if (
       Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||
@@ -54,7 +54,7 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements FieldNode<T> {
     return field;
   }
 
-  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): FieldArray<ElementType<T[K]>> {
+  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>> {
     const path = `${this.path}.${String(key)}`;
     if (
       Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||

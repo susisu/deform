@@ -62,9 +62,12 @@ export function isValid(errors: FieldErrors): boolean {
 }
 
 export interface FieldNode<T> extends Field<T> {
+  createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]>;
+  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>>;
+}
+
+export interface ChildFieldNode<T> extends FieldNode<T> {
   connect(): Disposable;
-  createChild<K extends ChildKeyOf<T>>(key: K): FieldNode<T[K]>;
-  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): FieldArray<ElementType<T[K]>>;
 }
 
 export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
@@ -85,7 +88,6 @@ type SelectChildArrayKey<T, K extends keyof T> =
     : never;
 
 export interface FieldArray<T> extends Field<readonly T[]> {
-  connect(): Disposable;
   getFields(): ReadonlyArray<FieldNode<T>>;
   subscribeFields(subscriber: FieldArraySubscriber<T>): Disposable;
   append(value: T): void;
@@ -94,6 +96,10 @@ export interface FieldArray<T> extends Field<readonly T[]> {
   remove(index: number): void;
   move(fromIndex: number, toIndex: number): void;
   swap(aIndex: number, bIndex: number): void;
+}
+
+export interface ChildFieldArray<T> extends FieldArray<T> {
+  connect(): Disposable;
 }
 
 export type FieldArraySubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;

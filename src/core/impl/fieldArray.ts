@@ -1,6 +1,7 @@
 import {
+  ChildFieldArray,
+  ChildFieldNode,
   Disposable,
-  FieldArray,
   FieldArraySubscriber,
   FieldErrors,
   FieldNode,
@@ -17,7 +18,7 @@ export type FieldArrayImplParams<T> = Readonly<{
   value: readonly T[];
 }>;
 
-export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements FieldArray<T> {
+export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildFieldArray<T> {
   private children: Map<string, Child<readonly T[]>>;
   private current: readonly T[];
   private fields: ReadonlyArray<FieldNode<T>>;
@@ -45,7 +46,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements FieldA
       this.detachChild(key, child);
     }
 
-    const fields: Array<FieldNode<T>> = [];
+    const fields: Array<ChildFieldNode<T>> = [];
     const indexByKey: Map<string, number> = new Map();
     const keyByIndex: string[] = [];
     for (let index = 0; index < value.length; index++) {
@@ -102,7 +103,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements FieldA
     throw new Error("not implemented");
   }
 
-  private createChild(value: T): [key: string, field: FieldNode<T>] {
+  private createChild(value: T): [key: string, field: ChildFieldNode<T>] {
     const key = `FieldArrayChild/${uniqueId()}`;
     const path = `${this.path}[]`;
     const getter: Getter<readonly T[], T> = value => {
