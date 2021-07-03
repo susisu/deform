@@ -1,4 +1,5 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
+import { FieldNode } from "../form";
 import { FieldArrayImpl } from "./fieldArray";
 
 describe("FieldArrayImpl", () => {
@@ -130,6 +131,54 @@ describe("FieldArrayImpl", () => {
           isPending: false,
         },
       ]);
+    });
+  });
+
+  describe("#subscribeFields", () => {
+    it("attaches a function that subscribes the child fields", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn((_: ReadonlyArray<FieldNode<number>>) => {});
+      const unsubscribe = fieldArray.subscribeFields(subscriber);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.setValue([1, 2]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      const fields = subscriber.mock.calls[0][0];
+      expect(fields).toHaveLength(2);
+      expect(fields.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 1,
+          value: 1,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+        {
+          defaultValue: 2,
+          value: 2,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+
+      unsubscribe();
+      fieldArray.setValue([3]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
 });
