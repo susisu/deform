@@ -48,12 +48,13 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.fieldsSubscribers = new Set();
     this.isFieldsDispatchQueued = false;
 
-    this.sync(this.value);
+    const connect = this.sync(this.value);
+    connect();
 
     this.isInitializing = false;
   }
 
-  private sync(value: readonly T[]): void {
+  private sync(value: readonly T[]): () => void {
     for (const [key, child] of [...this.children]) {
       this.detachChild(key, child);
     }
@@ -72,18 +73,23 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.indexByKey = indexByKey;
     this.keyByIndex = keyByIndex;
     this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
-
-    for (const field of fields) {
-      field.connect();
-    }
-
     this.queueFieldsDispatch();
+
+    return () => {
+      for (const field of fields) {
+        field.connect();
+      }
+    };
   }
 
-  protected override beforeSetValue(value: readonly T[]): void {
-    if (this.current !== value) {
-      this.sync(value);
+  protected override beforeSetValue(value: readonly T[]): (() => void) | undefined {
+    if (this.current === value) {
+      return undefined;
     }
+    const connect = this.sync(value);
+    return () => {
+      connect();
+    };
   }
 
   getFields(): ReadonlyArray<FieldNode<T>> {
