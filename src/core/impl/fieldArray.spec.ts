@@ -1137,6 +1137,44 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
+    it("overrides children errors", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields = fieldArray.getFields();
+      expect(fields).toHaveLength(1);
+      const field = fields[0];
+      field.setCustomErrors({ foo: true });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: true } }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const validator: Validator<readonly number[]> = ({ resolve }) => {
+        resolve(false);
+      };
+      const removeValidator = fieldArray.addValidator("0", validator);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false } })
+      );
+
+      // removing the validator uncovers the children errors
+      removeValidator();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ errors: { 0: true } }));
+    });
+
     it("throws error if the field array already has a validator with the same key", () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",

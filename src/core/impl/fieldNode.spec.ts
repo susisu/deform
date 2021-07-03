@@ -810,6 +810,43 @@ describe("FieldNodeImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
+    it("overrides children errors", async () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      child.setCustomErrors({ foo: true });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: true } }));
+
+      const subscriber = jest.fn(() => {});
+      parent.subscribe(subscriber);
+
+      const validator: Validator<{ x: number; y: number }> = ({ resolve }) => {
+        resolve(false);
+      };
+      const removeValidator = parent.addValidator("x", validator);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { x: false } })
+      );
+
+      // removing the validator uncovers the children errors
+      removeValidator();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ errors: { x: true } }));
+    });
+
     it("throws error if the field already has a validator with the same key", () => {
       const field = new FieldNodeImpl({
         path: "$root",
