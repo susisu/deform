@@ -4,7 +4,7 @@ export type ElementType<T extends readonly unknown[]> = T[number];
 
 export interface Field<T> {
   readonly id: string;
-  getSnapshot(): FieldSnapshot<T>;
+  getSnapshot(): Snapshot<T>;
   subscribe(subscriber: Subscriber<T>): Disposable;
   setDefaultValue(value: T): void;
   setValue(value: T): void;
@@ -17,7 +17,7 @@ export interface Field<T> {
   validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors>;
 }
 
-export type FieldSnapshot<T> = Readonly<{
+export type Snapshot<T> = Readonly<{
   defaultValue: T;
   value: T;
   isTouched: boolean;
@@ -26,7 +26,7 @@ export type FieldSnapshot<T> = Readonly<{
   isPending: boolean;
 }>;
 
-export type Subscriber<T> = (snapshot: FieldSnapshot<T>) => void;
+export type Subscriber<T> = (snapshot: Snapshot<T>) => void;
 
 export type FieldErrors = Readonly<{ [key: string]: unknown }>;
 

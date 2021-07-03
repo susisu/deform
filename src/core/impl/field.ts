@@ -2,9 +2,9 @@ import {
   Disposable,
   Field,
   FieldErrors,
-  FieldSnapshot,
   isEqualErrors,
   isValid,
+  Snapshot,
   Subscriber,
   ValidateOnceOptions,
   Validator,
@@ -43,7 +43,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   private childrenErrors: Map<PropertyKey, FieldErrors>;
   private pendingChildKeys: Set<PropertyKey>;
 
-  private snapshot: FieldSnapshot<T>;
+  private snapshot: Snapshot<T>;
   private subscribers: Set<Subscriber<T>>;
   private isDispatchQueued: boolean;
 
@@ -120,7 +120,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     return this.pendingValidations.size > 0 || this.pendingChildKeys.size > 0;
   }
 
-  getSnapshot(): FieldSnapshot<T> {
+  getSnapshot(): Snapshot<T> {
     return this.snapshot;
   }
 
