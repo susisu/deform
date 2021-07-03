@@ -5,7 +5,7 @@ export type ElementType<T extends readonly unknown[]> = T[number];
 export interface Field<T> {
   readonly id: string;
   getSnapshot(): FieldSnapshot<T>;
-  subscribe(subscriber: FieldSubscriber<T>): Disposable;
+  subscribe(subscriber: Subscriber<T>): Disposable;
   setDefaultValue(value: T): void;
   setValue(value: T): void;
   setTouched(): void;
@@ -26,7 +26,7 @@ export type FieldSnapshot<T> = Readonly<{
   isPending: boolean;
 }>;
 
-export type FieldSubscriber<T> = (snapshot: FieldSnapshot<T>) => void;
+export type Subscriber<T> = (snapshot: FieldSnapshot<T>) => void;
 
 export type FieldErrors = Readonly<{ [key: string]: unknown }>;
 
@@ -89,7 +89,7 @@ type SelectChildArrayKey<T, K extends keyof T> =
 
 export interface FieldArray<T> extends Field<readonly T[]> {
   getFields(): ReadonlyArray<FieldNode<T>>;
-  subscribeFields(subscriber: FieldArraySubscriber<T>): Disposable;
+  subscribeFields(fieldSubscriber: FieldsSubscriber<T>): Disposable;
   append(value: T): void;
   prepend(value: T): void;
   insert(index: number, value: T): void;
@@ -102,4 +102,4 @@ export interface ChildFieldArray<T> extends FieldArray<T> {
   connect(): Disposable;
 }
 
-export type FieldArraySubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;
+export type FieldsSubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;

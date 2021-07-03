@@ -2,9 +2,9 @@ import {
   ChildFieldArray,
   ChildFieldNode,
   Disposable,
-  FieldArraySubscriber,
   FieldErrors,
   FieldNode,
+  FieldsSubscriber,
   isValid,
 } from "../form";
 import { FieldImpl } from "./field";
@@ -75,7 +75,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     return this.fields;
   }
 
-  subscribeFields(_subscriber: FieldArraySubscriber<T>): Disposable {
+  subscribeFields(_fieldSubscriber: FieldsSubscriber<T>): Disposable {
     throw new Error("not implemented");
   }
 

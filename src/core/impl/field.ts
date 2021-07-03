@@ -3,9 +3,9 @@ import {
   Field,
   FieldErrors,
   FieldSnapshot,
-  FieldSubscriber,
   isEqualErrors,
   isValid,
+  Subscriber,
   ValidateOnceOptions,
   Validator,
 } from "../form";
@@ -44,7 +44,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   private pendingChildKeys: Set<PropertyKey>;
 
   private snapshot: FieldSnapshot<T>;
-  private subscribers: Set<FieldSubscriber<T>>;
+  private subscribers: Set<Subscriber<T>>;
   private isDispatchQueued: boolean;
 
   constructor(params: FieldImplParams<T>) {
@@ -124,14 +124,14 @@ export abstract class FieldImpl<T> implements Field<T> {
     return this.snapshot;
   }
 
-  subscribe(subscriber: FieldSubscriber<T>): Disposable {
+  subscribe(subscriber: Subscriber<T>): Disposable {
     this.subscribers.add(subscriber);
     return () => {
       this.unsubscribe(subscriber);
     };
   }
 
-  private unsubscribe(subscriber: FieldSubscriber<T>): void {
+  private unsubscribe(subscriber: Subscriber<T>): void {
     this.subscribers.delete(subscriber);
   }
 
