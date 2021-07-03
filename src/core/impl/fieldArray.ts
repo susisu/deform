@@ -55,6 +55,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   private sync(value: readonly T[]): () => void {
+    // TODO: operate on this.fields, not this.children, so that the children can clean up themselves
     for (const [key, child] of [...this.children]) {
       this.detachChild(key, child);
     }
