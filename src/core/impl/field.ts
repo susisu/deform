@@ -235,9 +235,15 @@ export abstract class FieldImpl<T> implements Field<T> {
     if (Object.is(this.value, value)) {
       return false;
     }
+    this.beforeSetValue(value);
     this.value = value;
     this.updateSnapshotValue();
     return true;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected beforeSetValue(value: T): void {
+    // noop
   }
 
   setValue(value: T): void {
