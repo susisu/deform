@@ -75,7 +75,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     return this.fields;
   }
 
-  subscribeFields(_fieldSubscriber: FieldsSubscriber<T>): Disposable {
+  subscribeFields(_fieldsSubscriber: FieldsSubscriber<T>): Disposable {
     throw new Error("not implemented");
   }
 
