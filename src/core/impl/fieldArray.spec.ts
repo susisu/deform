@@ -965,4 +965,190 @@ describe("FieldArrayImpl", () => {
       });
     });
   });
+
+  describe("#addValidator", () => {
+    it("attaches a validator to the field array", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      const removeValidator = fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: [42],
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      request1.resolve(true);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
+      );
+
+      // creates a new validation request when 'value' is changed
+      fieldArray.setValue([1, 2]);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual({
+        id: expect.stringMatching(/^ValidationRequest\//),
+        onetime: false,
+        value: [1, 2],
+        resolve: expect.any(Function),
+        signal: expect.any(window.AbortSignal),
+      });
+      expect(request2.id).not.toBe(request1.id);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: true }, isPending: true })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: true }, isPending: true })
+      );
+
+      request2.resolve(false);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(4);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
+      );
+
+      // can remove
+      removeValidator();
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(4);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(5);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: false })
+      );
+    });
+
+    it("aborts the pending validation request when a new request is created", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      const onAbort = jest.fn(() => {});
+      request1.signal.addEventListener("abort", onAbort);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      expect(onAbort).toHaveBeenCalledTimes(0);
+
+      // creates a new validation request when 'value' is changed
+      fieldArray.setValue([1, 2]);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: [1, 2] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: true })
+      );
+      expect(onAbort).toHaveBeenCalledTimes(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: true })
+      );
+
+      request2.resolve(false);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
+      );
+
+      // resolving an aborted request has no effect
+      request1.resolve(true);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+    });
+
+    it("throws error if the field array already has a validator with the same key", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+
+      fieldArray.addValidator("foo", () => {});
+
+      expect(() => {
+        fieldArray.addValidator("foo", () => {});
+      }).toThrowError("FieldArray '$root' already has a validator 'foo'");
+    });
+  });
 });
