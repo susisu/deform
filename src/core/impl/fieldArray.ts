@@ -206,7 +206,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       setValue: value => {
         if (this.children.get(key) === child) {
           const newValue = setter(this.value, value);
-          // expected to be true
+          // expected to be always true
           if (newValue.length === this.current.length) {
             this.current = newValue;
           }

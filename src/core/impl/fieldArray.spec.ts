@@ -162,6 +162,89 @@ describe("FieldArrayImpl", () => {
         },
       ]);
     });
+
+    it("accepts updates from the child fields", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42, 43],
+      });
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [42, 43],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, 1: false },
+        isPending: false,
+      });
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(2);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 42,
+          value: 42,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+        {
+          defaultValue: 43,
+          value: 43,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fields1[0].setValue(1);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [1, 43],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, 1: false },
+        isPending: false,
+      });
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(2);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 42,
+          value: 1,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+        {
+          defaultValue: 43,
+          value: 43,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2[1].id).toBe(fields1[1].id);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: [0],
+        value: [1, 43],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, 1: false },
+        isPending: false,
+      });
+    });
   });
 
   describe("#subscribeFields", () => {
