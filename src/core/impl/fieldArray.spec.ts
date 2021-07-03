@@ -262,7 +262,7 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#setDefaultValue", () => {
-    it("sets the default value of the field", async () => {
+    it("sets the default value of the field array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -346,7 +346,7 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#setValue", () => {
-    it("sets the value of the field", async () => {
+    it("sets the value of the field array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -492,6 +492,64 @@ describe("FieldArrayImpl", () => {
       expect(fields3[0].id).toBe(fields2[0].id);
       expect(fields3[1].id).toBe(fields2[1].id);
 
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#setTouched", () => {
+    it("sets the field array touched", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setTouched();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ isTouched: true }));
+
+      // does nothing if the field array is already touched
+      fieldArray.setTouched();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#setDirty", () => {
+    it("sets the field array dirty", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setDirty();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ isDirty: true }));
+
+      // does nothing if the field array is already dirty
+      fieldArray.setDirty();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
