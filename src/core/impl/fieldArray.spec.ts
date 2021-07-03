@@ -260,4 +260,88 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("#setDefaultValue", () => {
+    it("sets the default value of the field", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [0] }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const newDefaultValue = [1, 2];
+      fieldArray.setDefaultValue(newDefaultValue);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [1, 2] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ defaultValue: [1, 2] })
+      );
+
+      // does nothing if the same value is already set
+      fieldArray.setDefaultValue(newDefaultValue);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [1, 2] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches only once when called multiple times", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [0] }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setDefaultValue([1, 2]);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [1, 2] }));
+
+      fieldArray.setDefaultValue([3]);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [3] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ defaultValue: [3] }));
+    });
+
+    it("does not affect the child fields", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(1);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42 }),
+      ]);
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribeFields(subscriber);
+
+      const newDefaultValue = [1, 2];
+      fieldArray.setDefaultValue(newDefaultValue);
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(1);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42 }),
+      ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+    });
+  });
 });
