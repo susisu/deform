@@ -7,7 +7,7 @@ import {
   Errors,
   isValid,
 } from "../form";
-import { FieldImpl } from "./field";
+import { FieldImpl, KeyMapper } from "./field";
 import { FieldArrayImpl } from "./fieldArray";
 import { Child, Getter, Parent, Setter } from "./shared";
 
@@ -197,10 +197,15 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     }
   }
 
-  protected async validateChildrenOnce(value: T, signal: AbortSignal): Promise<Errors> {
+  protected async validateChildrenOnce(
+    childrenErrorsKeyMapper: KeyMapper,
+    signal: AbortSignal
+  ): Promise<Errors> {
     const entries = await Promise.all(
       [...this.children].map(([key, child]) =>
-        child.validateOnce(value, signal).then(errors => [key, !isValid(errors)] as const)
+        child
+          .validateOnce(signal)
+          .then(errors => [childrenErrorsKeyMapper(key), !isValid(errors)] as const)
       )
     );
     return Object.fromEntries(entries);

@@ -276,10 +276,15 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     }
   }
 
-  protected async validateChildrenOnce(value: readonly T[], signal: AbortSignal): Promise<Errors> {
+  protected async validateChildrenOnce(
+    childrenErrorsKeyMapper: KeyMapper,
+    signal: AbortSignal
+  ): Promise<Errors> {
     const entries = await Promise.all(
       [...this.children].map(([key, child]) =>
-        child.validateOnce(value, signal).then(errors => [key, !isValid(errors)] as const)
+        child
+          .validateOnce(signal)
+          .then(errors => [childrenErrorsKeyMapper(key), !isValid(errors)] as const)
       )
     );
     return Object.fromEntries(entries);

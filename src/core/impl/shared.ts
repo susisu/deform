@@ -27,7 +27,7 @@ export type Child<T> = Readonly<{
   setValue: (value: T) => void;
   reset: () => void;
   validate: () => void;
-  validateOnce: (value: T, signal: AbortSignal) => Promise<Errors>;
+  validateOnce: (signal: AbortSignal) => Promise<Errors>;
 }>;
 
 export type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;

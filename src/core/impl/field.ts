@@ -7,6 +7,7 @@ import {
   Snapshot,
   Subscriber,
   ValidateOnceOptions,
+  ValidateOnceResult,
   Validator,
 } from "../form";
 import { Child, Getter, mergeErrors, Parent, PendingValidation, uniqueId } from "./shared";
@@ -111,9 +112,10 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   // depends on: childrenErrors, childrenErrorsKeyMapper, validationErrors, customErrors
   private calcSnapshotErrors(): Errors {
+    const childrenErrorsKeyMapper = this.childrenErrorsKeyMapper;
     const childrenErrors = Object.fromEntries(
       [...this.childrenErrors].map(
-        ([key, errors]) => [this.childrenErrorsKeyMapper(key), !isValid(errors)] as const
+        ([key, errors]) => [childrenErrorsKeyMapper(key), !isValid(errors)] as const
       )
     );
     return mergeErrors({
@@ -442,7 +444,8 @@ export abstract class FieldImpl<T> implements Field<T> {
     return Object.fromEntries(entries);
   }
 
-  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<Errors> {
+  async validateOnce(options?: ValidateOnceOptions): Promise<ValidateOnceResult<T>> {
+    const value = this.value;
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
@@ -454,12 +457,14 @@ export abstract class FieldImpl<T> implements Field<T> {
       });
     }
     const customErrors = this.customErrors;
+    const childrenErrorsKeyMapper = this.childrenErrorsKeyMapper;
     try {
       const [childrenErrors, validationErrors] = await Promise.all([
-        this.validateChildrenOnce(value, controller.signal),
+        this.validateChildrenOnce(childrenErrorsKeyMapper, controller.signal),
         this.runAllValidatorsOnce(value, controller.signal),
       ]);
-      return mergeErrors({ childrenErrors, validationErrors, customErrors });
+      const errors = mergeErrors({ childrenErrors, validationErrors, customErrors });
+      return { value, errors };
     } catch (err: unknown) {
       controller.abort();
       throw err;
@@ -566,7 +571,7 @@ export abstract class FieldImpl<T> implements Field<T> {
       validate: () => {
         this.validate();
       },
-      validateOnce: (value, signal) => this.validateOnce(getter(value), { signal }),
+      validateOnce: signal => this.validateOnce({ signal }).then(({ errors }) => errors),
     };
   }
 
@@ -610,7 +615,10 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected abstract updateChildrenValue(): void;
   protected abstract resetChildren(): void;
   protected abstract validateChildren(): void;
-  protected abstract validateChildrenOnce(value: T, signal: AbortSignal): Promise<Errors>;
+  protected abstract validateChildrenOnce(
+    childrenErrorsKeyMapper: KeyMapper,
+    signal: AbortSignal
+  ): Promise<Errors>;
 }
 
 export type KeyMapper = (key: PropertyKey) => PropertyKey;

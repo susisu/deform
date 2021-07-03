@@ -1141,7 +1141,7 @@ describe("FieldNodeImpl", () => {
   });
 
   describe("#validateOnce", () => {
-    it("runs attached validators with a given value and returns the errors", async () => {
+    it("runs attached validators and returns the value and errors", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -1169,13 +1169,13 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      const promise = field.validateOnce(1);
+      const promise = field.validateOnce();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: true,
-        value: 1,
+        value: 42,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
@@ -1189,7 +1189,13 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      await expect(promise).resolves.toEqual({ foo: false });
+      field.setValue(1);
+
+      // the value at the time when 'validateOnce' is called is used
+      await expect(promise).resolves.toEqual({
+        value: 42,
+        errors: { foo: false },
+      });
     });
 
     it("includes custom errors in the result", async () => {
@@ -1219,10 +1225,10 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
       );
 
-      const promise = field.validateOnce(1);
+      const promise = field.validateOnce();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 1 }));
+      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 42 }));
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true, bar: true }, isPending: false })
       );
@@ -1237,9 +1243,12 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: false, bar: false }, isPending: false })
       );
 
-      // custom errors at the time when 'validateOnce' is called is used
-      // custom errors overrides validation errors
-      await expect(promise).resolves.toEqual({ foo: true, bar: true });
+      // the custom errors at the time when 'validateOnce' is called is used
+      // custom errors override validation errors
+      await expect(promise).resolves.toEqual({
+        value: 42,
+        errors: { foo: true, bar: true },
+      });
     });
 
     it("is aborted when the signal is aborted", async () => {
@@ -1265,10 +1274,10 @@ describe("FieldNodeImpl", () => {
       );
 
       const controller = new window.AbortController();
-      const promise = field.validateOnce(1, { signal: controller.signal });
+      const promise = field.validateOnce({ signal: controller.signal });
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
-      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 1 }));
+      expect(request2).toEqual(expect.objectContaining({ onetime: true, value: 42 }));
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
@@ -1307,7 +1316,7 @@ describe("FieldNodeImpl", () => {
 
       const controller = new window.AbortController();
       controller.abort();
-      const promise = field.validateOnce(1, { signal: controller.signal });
+      const promise = field.validateOnce({ signal: controller.signal });
       expect(validator).toHaveBeenCalledTimes(1);
 
       await expect(promise).rejects.toThrowError("Aborted");
@@ -1352,13 +1361,13 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      const promise = parent.validateOnce({ x: 2, y: 3 });
+      const promise = parent.validateOnce();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         onetime: true,
-        value: 2,
+        value: 42,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
@@ -1378,7 +1387,13 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      await expect(promise).resolves.toEqual({ x: false });
+      parent.setValue({ x: 2, y: 3 });
+
+      // the value at the time when 'validateOnce' is called is used
+      await expect(promise).resolves.toEqual({
+        value: { x: 42, y: 43 },
+        errors: { x: false },
+      });
     });
   });
 

@@ -16,7 +16,7 @@ export interface Field<T> {
   addValidator(key: string, validator: Validator<T>): Disposable;
   removeValidator(key: string, validator: Validator<T>): void;
   validate(): void;
-  validateOnce(value: T, options?: ValidateOnceOptions): Promise<Errors>;
+  validateOnce(options?: ValidateOnceOptions): Promise<ValidateOnceResult<T>>;
 }
 
 export type Snapshot<T> = Readonly<{
@@ -44,6 +44,11 @@ export type ValidationRequest<T> = Readonly<{
 
 export type ValidateOnceOptions = Readonly<{
   signal?: AbortSignal;
+}>;
+
+export type ValidateOnceResult<T> = Readonly<{
+  value: T;
+  errors: Errors;
 }>;
 
 export function isEqualErrors(a: Errors, b: Errors): boolean {
