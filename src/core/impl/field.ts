@@ -1,7 +1,7 @@
 import {
   Disposable,
+  Errors,
   Field,
-  FieldErrors,
   isEqualErrors,
   isValid,
   Snapshot,
@@ -32,15 +32,15 @@ export abstract class FieldImpl<T> implements Field<T> {
   private isTouched: boolean;
   private isDirty: boolean;
 
-  private validationErrors: FieldErrors;
-  private customErrors: FieldErrors;
+  private validationErrors: Errors;
+  private customErrors: Errors;
 
   private validators: Map<string, Validator<T>>;
   private pendingValidations: Map<string, PendingValidation>;
 
   private touchedChildKeys: Set<PropertyKey>;
   private dirtyChildKeys: Set<PropertyKey>;
-  private childrenErrors: Map<PropertyKey, FieldErrors>;
+  private childrenErrors: Map<PropertyKey, Errors>;
   private pendingChildKeys: Set<PropertyKey>;
 
   private snapshot: Snapshot<T>;
@@ -104,7 +104,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   }
 
   // depends on: childrenErrors, validationErrors, customErrors
-  private calcSnapshotErrors(): FieldErrors {
+  private calcSnapshotErrors(): Errors {
     const childrenErrors = Object.fromEntries(
       [...this.childrenErrors].map(([key, errors]) => [key, !isValid(errors)] as const)
     );
@@ -277,7 +277,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.setIsDirty(true);
   }
 
-  private setValidationErrors(errors: FieldErrors): void {
+  private setValidationErrors(errors: Errors): void {
     if (this.validationErrors === errors) {
       return;
     }
@@ -285,7 +285,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.updateSnapshotErrors();
   }
 
-  setCustomErrors(errors: FieldErrors): void {
+  setCustomErrors(errors: Errors): void {
     if (this.customErrors === errors) {
       return;
     }
@@ -413,7 +413,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     });
   }
 
-  private async runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
+  private async runAllValidatorsOnce(value: T, signal: AbortSignal): Promise<Errors> {
     const entries = await Promise.all(
       [...this.validators.keys()].map(key =>
         this.runValidatorOnce(key, value, signal).then(error => [key, error] as const)
@@ -422,7 +422,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     return Object.fromEntries(entries);
   }
 
-  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors> {
+  async validateOnce(value: T, options?: ValidateOnceOptions): Promise<Errors> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
@@ -474,7 +474,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.updateSnapshotIsDirty();
   }
 
-  protected setChildErrors(key: PropertyKey, errors: FieldErrors): void {
+  protected setChildErrors(key: PropertyKey, errors: Errors): void {
     this.childrenErrors.set(key, errors);
     this.updateSnapshotErrors();
   }
@@ -591,5 +591,5 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected abstract updateChildrenValue(): void;
   protected abstract resetChildren(): void;
   protected abstract validateChildren(): void;
-  protected abstract validateChildrenOnce(value: T, signal: AbortSignal): Promise<FieldErrors>;
+  protected abstract validateChildrenOnce(value: T, signal: AbortSignal): Promise<Errors>;
 }

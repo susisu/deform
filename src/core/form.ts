@@ -10,11 +10,11 @@ export interface Field<T> {
   setValue(value: T): void;
   setTouched(): void;
   setDirty(): void;
-  setCustomErrors(errors: FieldErrors): void;
+  setCustomErrors(errors: Errors): void;
   reset(): void;
   addValidator(key: string, validator: Validator<T>): Disposable;
   validate(): void;
-  validateOnce(value: T, options?: ValidateOnceOptions): Promise<FieldErrors>;
+  validateOnce(value: T, options?: ValidateOnceOptions): Promise<Errors>;
 }
 
 export type Snapshot<T> = Readonly<{
@@ -22,13 +22,13 @@ export type Snapshot<T> = Readonly<{
   value: T;
   isTouched: boolean;
   isDirty: boolean;
-  errors: FieldErrors;
+  errors: Errors;
   isPending: boolean;
 }>;
 
 export type Subscriber<T> = (snapshot: Snapshot<T>) => void;
 
-export type FieldErrors = Readonly<{ [key: string]: unknown }>;
+export type Errors = Readonly<{ [key: string]: unknown }>;
 
 export type Validator<T> = (req: ValidationRequest<T>) => void;
 
@@ -44,7 +44,7 @@ export type ValidateOnceOptions = Readonly<{
   signal?: AbortSignal;
 }>;
 
-export function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
+export function isEqualErrors(a: Errors, b: Errors): boolean {
   if (a === b) {
     return true;
   }
@@ -56,7 +56,7 @@ export function isEqualErrors(a: FieldErrors, b: FieldErrors): boolean {
   return aKeys.every((key, i) => bKeys[i] === key && Object.is(a[key], b[key]));
 }
 
-export function isValid(errors: FieldErrors): boolean {
+export function isValid(errors: Errors): boolean {
   const keys = Object.keys(errors);
   return keys.every(key => !errors[key]);
 }

@@ -1,4 +1,4 @@
-import { FieldErrors } from "../form";
+import { Errors } from "../form";
 
 export const uniqueId = (() => {
   let uniqueIdCounter = 0;
@@ -18,7 +18,7 @@ export type Parent<T> = Readonly<{
   setValue: (value: T) => void;
   setIsTouched: (isTouched: boolean) => void;
   setIsDirty: (isDirty: boolean) => void;
-  setErrors: (errors: FieldErrors) => void;
+  setErrors: (errors: Errors) => void;
   setIsPending: (isPending: boolean) => void;
 }>;
 
@@ -27,18 +27,18 @@ export type Child<T> = Readonly<{
   setValue: (value: T) => void;
   reset: () => void;
   validate: () => void;
-  validateOnce: (value: T, signal: AbortSignal) => Promise<FieldErrors>;
+  validateOnce: (value: T, signal: AbortSignal) => Promise<Errors>;
 }>;
 
 export type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;
 
 export type MergeErrorsParams = Readonly<{
-  childrenErrors: FieldErrors;
-  validationErrors: FieldErrors;
-  customErrors: FieldErrors;
+  childrenErrors: Errors;
+  validationErrors: Errors;
+  customErrors: Errors;
 }>;
 
-export function mergeErrors(params: MergeErrorsParams): FieldErrors {
+export function mergeErrors(params: MergeErrorsParams): Errors {
   return {
     ...params.childrenErrors,
     ...params.validationErrors,

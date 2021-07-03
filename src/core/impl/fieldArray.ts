@@ -2,7 +2,7 @@ import {
   ChildFieldArray,
   ChildFieldNode,
   Disposable,
-  FieldErrors,
+  Errors,
   FieldNode,
   FieldsSubscriber,
   isValid,
@@ -229,10 +229,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     }
   }
 
-  protected async validateChildrenOnce(
-    value: readonly T[],
-    signal: AbortSignal
-  ): Promise<FieldErrors> {
+  protected async validateChildrenOnce(value: readonly T[], signal: AbortSignal): Promise<Errors> {
     const entries = await Promise.all(
       [...this.children].map(([key, child]) =>
         child.validateOnce(value, signal).then(errors => [key, !isValid(errors)] as const)

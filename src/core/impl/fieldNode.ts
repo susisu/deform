@@ -4,7 +4,7 @@ import {
   ChildFieldNode,
   ChildKeyOf,
   ElementType,
-  FieldErrors,
+  Errors,
   isValid,
 } from "../form";
 import { FieldImpl } from "./field";
@@ -182,7 +182,7 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     }
   }
 
-  protected async validateChildrenOnce(value: T, signal: AbortSignal): Promise<FieldErrors> {
+  protected async validateChildrenOnce(value: T, signal: AbortSignal): Promise<Errors> {
     const entries = await Promise.all(
       [...this.children].map(([key, child]) =>
         child.validateOnce(value, signal).then(errors => [key, !isValid(errors)] as const)
