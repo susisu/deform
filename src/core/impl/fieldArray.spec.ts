@@ -1,3 +1,4 @@
+import { waitForMicrotasks } from "../../__tests__/utils";
 import { FieldArrayImpl } from "./fieldArray";
 
 describe("FieldArrayImpl", () => {
@@ -56,6 +57,35 @@ describe("FieldArrayImpl", () => {
         errors: { 0: false, 1: false },
         isPending: false,
       });
+    });
+  });
+
+  describe("#subscribe", () => {
+    it("attaches a function that subscribes the field's state", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn(() => {});
+      const unsubscribe = fieldArray.subscribe(subscriber);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.setValue([1, 2]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1, 2] }));
+
+      unsubscribe();
+      fieldArray.setValue([3]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
 });

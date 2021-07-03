@@ -71,6 +71,9 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       const unsubscribe = field.subscribe(subscriber);
 
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
       field.setValue(1);
 
       expect(subscriber).toHaveBeenCalledTimes(0);
