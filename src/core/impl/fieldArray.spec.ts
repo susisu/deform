@@ -88,4 +88,48 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("#getFields", () => {
+    it("gets the latest snapshot of the child fields", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(1);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 42,
+          value: 42,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+
+      fieldArray.setValue([1, 2]);
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(2);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 1,
+          value: 1,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+        {
+          defaultValue: 2,
+          value: 2,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+    });
+  });
 });
