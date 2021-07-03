@@ -1,5 +1,5 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
-import { FieldNode, ValidationRequest } from "../form";
+import { FieldNode, ValidationRequest, Validator } from "../form";
 import { FieldArrayImpl } from "./fieldArray";
 
 describe("FieldArrayImpl", () => {
@@ -553,6 +553,96 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#setCustomErrors", () => {
+    it("sets custom errors of the field array", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setCustomErrors({ foo: true, bar: false });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true, bar: false } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, foo: true, bar: false } })
+      );
+
+      // does nothing if the field array has the same errors
+      fieldArray.setCustomErrors({ foo: true, bar: false });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true, bar: false } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("overrides validation errors", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const validator: Validator<readonly number[]> = ({ resolve }) => {
+        resolve(true);
+      };
+      fieldArray.addValidator("foo", validator);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, foo: true } })
+      );
+
+      fieldArray.setCustomErrors({ foo: false });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: false } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, foo: false } })
+      );
+
+      // removing custom errors uncovers the validation errors
+      fieldArray.setCustomErrors({});
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true } })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { 0: false, foo: true } })
+      );
     });
   });
 });
