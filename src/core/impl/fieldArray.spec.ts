@@ -665,4 +665,304 @@ describe("FieldArrayImpl", () => {
       );
     });
   });
+
+  describe("reset", () => {
+    it("resets the field array's state", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      fieldArray.setValue([1, 2]);
+      fieldArray.setTouched();
+      fieldArray.setDirty();
+      fieldArray.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      fieldArray.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: [1, 2] }));
+      request1.resolve(true);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [1, 2],
+        isTouched: true,
+        isDirty: true,
+        errors: { 0: false, 1: false, foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: [0] }));
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: true,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: true,
+      });
+
+      request2.resolve(false);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, bar: false },
+        isPending: false,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, bar: false },
+        isPending: false,
+      });
+    });
+
+    it("triggers validation even if the value is already default", () => {
+      const defaultValue = [0];
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue,
+        value: defaultValue,
+      });
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: [0] }));
+      request1.resolve(true);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, foo: true },
+        isPending: false,
+      });
+
+      fieldArray.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: [0] }));
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: true,
+      });
+
+      request2.resolve(false);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, foo: false },
+        isPending: false,
+      });
+    });
+
+    it("accepts immediate validation errors after resetting", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      fieldArray.setValue([1, 2]);
+      fieldArray.setTouched();
+      fieldArray.setDirty();
+      fieldArray.setCustomErrors({ foo: true });
+      const validator: Validator<readonly number[]> = ({ resolve }) => {
+        resolve(true);
+      };
+      fieldArray.addValidator("bar", validator);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [1, 2],
+        isTouched: true,
+        isDirty: true,
+        errors: { 0: false, 1: false, foo: true, bar: true },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.reset();
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false, bar: true },
+        isPending: false,
+      });
+    });
+
+    it("recreates the child fields", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(1);
+      const field1 = fields1[0];
+      field1.setValue(1);
+      field1.setTouched();
+      field1.setDirty();
+      field1.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field1.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: 1 }));
+      request1.resolve({});
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [1],
+        isTouched: true,
+        isDirty: true,
+        errors: { 0: true },
+        isPending: false,
+      });
+      expect(field1.getSnapshot()).toEqual({
+        defaultValue: 42,
+        value: 1,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: {} },
+        isPending: false,
+      });
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.reset();
+      expect(validator).toHaveBeenCalledTimes(1);
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(1);
+      const field2 = fields2[0];
+      expect(field2.id).not.toBe(field1.id);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: false,
+      });
+      expect(field2.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: false,
+      });
+    });
+
+    it("does not recreate the child fields if the value is already default", () => {
+      const defalutValue = [0];
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: defalutValue,
+        value: defalutValue,
+      });
+      const fields = fieldArray.getFields();
+      expect(fields).toHaveLength(1);
+      const field = fields[0];
+      field.setTouched();
+      field.setDirty();
+      field.setCustomErrors({ foo: true });
+      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      field.addValidator("bar", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: 0 }));
+      request1.resolve({});
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: true,
+        isDirty: true,
+        errors: { 0: true },
+        isPending: false,
+      });
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: true,
+        isDirty: true,
+        errors: { foo: true, bar: {} },
+        isPending: false,
+      });
+
+      fieldArray.reset();
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: 0 }));
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: true,
+      });
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: {},
+        isPending: true,
+      });
+
+      request2.resolve(null);
+      expect(fieldArray.getSnapshot()).toEqual({
+        defaultValue: [0],
+        value: [0],
+        isTouched: false,
+        isDirty: false,
+        errors: { 0: false },
+        isPending: false,
+      });
+      expect(field.getSnapshot()).toEqual({
+        defaultValue: 0,
+        value: 0,
+        isTouched: false,
+        isDirty: false,
+        errors: { bar: null },
+        isPending: false,
+      });
+    });
+  });
 });

@@ -490,7 +490,7 @@ describe("FieldNodeImpl", () => {
       });
     });
 
-    it("triggers validation if the value is already default", () => {
+    it("triggers validation even if the value is already default", () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -557,9 +557,6 @@ describe("FieldNodeImpl", () => {
         errors: { foo: true, bar: true },
         isPending: false,
       });
-
-      const subscriber = jest.fn(() => {});
-      field.subscribe(subscriber);
 
       field.reset();
       expect(field.getSnapshot()).toEqual({
