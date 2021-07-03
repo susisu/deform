@@ -44,7 +44,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       );
     }
     const getter: Getter<T, T[K]> = value => value[key];
-    const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x }); // this is actually unsafe
+    // This is actually unsafe; casting pure object to T
+    const setter: Setter<T, T[K]> = (value, x) => ({ ...value, [key]: x });
     const field: FieldNodeImpl<T[K]> = new FieldNodeImpl({
       path,
       parent: this.toParent(key, setter, () => field.toChild(getter)),
@@ -76,7 +77,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     }
     type E = ElementType<T[K]>;
     const getter: Getter<T, readonly E[]> = value => value[key];
-    const setter: Setter<T, readonly E[]> = (value, x) => ({ ...value, [key]: x }); // this is actually unsafe
+    // This is actually unsafe; casting pure object to T, and readonly E[] to T[K]
+    const setter: Setter<T, readonly E[]> = (value, x) => ({ ...value, [key]: x });
     const fieldArray: FieldArrayImpl<E> = new FieldArrayImpl({
       path,
       parent: this.toParent(key, setter, () => fieldArray.toChild(getter)),
