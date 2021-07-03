@@ -345,32 +345,21 @@ describe("FieldNodeImpl", () => {
         defaultValue: 0,
         value: 42,
       });
-      expect(field.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: {}, isPending: false })
-      );
-
-      const subscriber = jest.fn(() => {});
-      field.subscribe(subscriber);
-
       const validator: Validator<number> = ({ resolve }) => {
         resolve(true);
       };
       field.addValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
-      expect(subscriber).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(
-        expect.objectContaining({ errors: { foo: true } })
-      );
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
 
       field.setCustomErrors({ foo: false });
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
 
-      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: false } })
       );
@@ -379,12 +368,48 @@ describe("FieldNodeImpl", () => {
       field.setCustomErrors({});
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
-      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: true } })
       );
+    });
+
+    it("overrides children errors", async () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      child.setCustomErrors({ foo: true });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: true }, isPending: false })
+      );
+
+      const subscriber = jest.fn(() => {});
+      parent.subscribe(subscriber);
+
+      parent.setCustomErrors({ x: false });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: false } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: { x: false } })
+      );
+
+      // removing custom errors uncovers the children errors
+      parent.setCustomErrors({});
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: true } }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ errors: { x: true } }));
     });
   });
 
