@@ -139,7 +139,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
   }
 
-  private unsubscribe(subscriber: Subscriber<T>): void {
+  unsubscribe(subscriber: Subscriber<T>): void {
     this.subscribers.delete(subscriber);
   }
 
@@ -334,7 +334,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
   }
 
-  private removeValidator(key: string, validator: Validator<T>): void {
+  removeValidator(key: string, validator: Validator<T>): void {
     if (this.validators.get(key) === validator) {
       this.abortPendingValidation(key);
 
@@ -538,10 +538,9 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
   }
 
-  private disconnect(): void {
+  disconnect(): void {
     if (!this.parent) {
-      // NEVER COMES HERE
-      return;
+      throw new Error(`${this.className} '${this.path}' has no parent`);
     }
     if (this.isConnected) {
       this.parent.detach();

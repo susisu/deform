@@ -22,7 +22,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   private children: Map<string, Child<readonly T[]>>;
 
   private current: readonly T[];
-  private fields: ReadonlyArray<FieldNode<T>>;
+  private fields: ReadonlyArray<ChildFieldNode<T>>;
   private indexByKey: ReadonlyMap<string, number>;
   private keyByIndex: readonly string[];
 
@@ -55,9 +55,8 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   private sync(value: readonly T[]): () => void {
-    // TODO: operate on this.fields, not this.children, so that the children can clean up themselves
-    for (const [key, child] of [...this.children]) {
-      this.detachChild(key, child);
+    for (const field of this.fields) {
+      field.disconnect();
     }
 
     const fields: Array<ChildFieldNode<T>> = [];
@@ -104,7 +103,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     };
   }
 
-  private unsubscribeFields(subscriber: FieldsSubscriber<T>): void {
+  unsubscribeFields(subscriber: FieldsSubscriber<T>): void {
     this.fieldsSubscribers.delete(subscriber);
   }
 

@@ -81,7 +81,37 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1, 2] }));
 
+      // can unsubscribe
       unsubscribe();
+      fieldArray.setValue([3]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#unsubscribe", () => {
+    it("detaches a function that subscribes the field's state", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.setValue([1, 2]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1, 2] }));
+
+      fieldArray.unsubscribe(subscriber);
       fieldArray.setValue([3]);
 
       expect(subscriber).toHaveBeenCalledTimes(1);
@@ -173,7 +203,56 @@ describe("FieldArrayImpl", () => {
         },
       ]);
 
+      // can unsubscribe
       unsubscribe();
+      fieldArray.setValue([3]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#unsubscribeFields", () => {
+    it("detaches a function that subscribes the child fields", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn((_: ReadonlyArray<FieldNode<number>>) => {});
+      fieldArray.subscribeFields(subscriber);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.setValue([1, 2]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      const fields = subscriber.mock.calls[0][0];
+      expect(fields).toHaveLength(2);
+      expect(fields.map(field => field.getSnapshot())).toEqual([
+        {
+          defaultValue: 1,
+          value: 1,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+        {
+          defaultValue: 2,
+          value: 2,
+          isTouched: false,
+          isDirty: false,
+          errors: {},
+          isPending: false,
+        },
+      ]);
+
+      fieldArray.unsubscribeFields(subscriber);
       fieldArray.setValue([3]);
 
       expect(subscriber).toHaveBeenCalledTimes(1);

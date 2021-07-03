@@ -81,7 +81,34 @@ describe("FieldNodeImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
 
+      // can unsubscribe
       unsubscribe();
+      field.setValue(2);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#unsubscribe", () => {
+    it("detaches a function that subscribes the field's state", async () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setValue(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
+
+      field.unsubscribe(subscriber);
       field.setValue(2);
 
       expect(subscriber).toHaveBeenCalledTimes(1);
@@ -611,7 +638,7 @@ describe("FieldNodeImpl", () => {
       field.subscribe(subscriber);
 
       const validator = jest.fn((_: ValidationRequest<number>) => {});
-      field.addValidator("foo", validator);
+      const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
@@ -675,6 +702,19 @@ describe("FieldNodeImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(4);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
+      );
+
+      // can remove
+      removeValidator();
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(4);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(5);
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ errors: {}, isPending: false })
       );
     });
 
@@ -748,7 +788,23 @@ describe("FieldNodeImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
-    it("cleans up the error when a validator is removed", async () => {
+    it("throws error if the field already has a validator with the same key", () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+
+      field.addValidator("foo", () => {});
+
+      expect(() => {
+        field.addValidator("foo", () => {});
+      }).toThrowError("FieldNode '$root' already has a validator 'foo'");
+    });
+  });
+
+  describe("#removeValidator", () => {
+    it("removes a validator and cleans up the error", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -762,7 +818,7 @@ describe("FieldNodeImpl", () => {
       field.subscribe(subscriber);
 
       const validator = jest.fn((_: ValidationRequest<number>) => {});
-      const removeValidator = field.addValidator("foo", validator);
+      field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: 42 }));
@@ -787,7 +843,7 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      removeValidator();
+      field.removeValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: {}, isPending: false })
       );
@@ -800,7 +856,7 @@ describe("FieldNodeImpl", () => {
       );
     });
 
-    it("cleans up the pending validation request when a validator is removed", async () => {
+    it("cleans up the pending validation request", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -814,7 +870,7 @@ describe("FieldNodeImpl", () => {
       field.subscribe(subscriber);
 
       const validator = jest.fn((_: ValidationRequest<number>) => {});
-      const removeValidator = field.addValidator("foo", validator);
+      field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: 42 }));
@@ -831,7 +887,7 @@ describe("FieldNodeImpl", () => {
       );
 
       expect(onAbort).toHaveBeenCalledTimes(0);
-      removeValidator();
+      field.removeValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: {}, isPending: false })
       );
@@ -866,9 +922,10 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const removeValidator = field.addValidator("foo", ({ resolve }) => {
+      const validator: Validator<number> = ({ resolve }) => {
         resolve(true);
-      });
+      };
+      field.addValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -878,7 +935,7 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true } })
       );
 
-      removeValidator();
+      field.removeValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
 
       expect(subscriber).toHaveBeenCalledTimes(1);
@@ -898,26 +955,12 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: false } })
       );
 
-      removeValidator();
+      field.removeValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
 
       expect(subscriber).toHaveBeenCalledTimes(3);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(3);
-    });
-
-    it("throws error if the field already has a validator with the same key", () => {
-      const field = new FieldNodeImpl({
-        path: "$root",
-        defaultValue: 0,
-        value: 42,
-      });
-
-      field.addValidator("foo", () => {});
-
-      expect(() => {
-        field.addValidator("foo", () => {});
-      }).toThrowError("FieldNode '$root' already has a validator 'foo'");
     });
   });
 
@@ -1640,6 +1683,41 @@ describe("FieldNodeImpl", () => {
       child.connect();
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+    });
+  });
+
+  describe("#disconnect", () => {
+    it("unsynchronizes a child with the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+
+      parent.setValue({ x: 2, y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 2, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 2 }));
+
+      child.setValue(4);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 4, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 4 }));
+
+      // unsync
+      child.disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 4, y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 4 }));
+
+      parent.setValue({ x: 5, y: 6 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 5, y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 4 }));
+
+      child.setValue(7);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: 5, y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: 7 }));
     });
   });
 

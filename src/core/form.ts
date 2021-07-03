@@ -6,6 +6,7 @@ export interface Field<T> {
   readonly id: string;
   getSnapshot(): Snapshot<T>;
   subscribe(subscriber: Subscriber<T>): Disposable;
+  unsubscribe(subscriber: Subscriber<T>): void;
   setDefaultValue(value: T): void;
   setValue(value: T): void;
   setTouched(): void;
@@ -13,6 +14,7 @@ export interface Field<T> {
   setCustomErrors(errors: Errors): void;
   reset(): void;
   addValidator(key: string, validator: Validator<T>): Disposable;
+  removeValidator(key: string, validator: Validator<T>): void;
   validate(): void;
   validateOnce(value: T, options?: ValidateOnceOptions): Promise<Errors>;
 }
@@ -61,14 +63,17 @@ export function isValid(errors: Errors): boolean {
   return keys.every(key => !errors[key]);
 }
 
+export interface ChildField {
+  connect(): Disposable;
+  disconnect(): void;
+}
+
 export interface FieldNode<T> extends Field<T> {
   createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]>;
   createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>>;
 }
 
-export interface ChildFieldNode<T> extends FieldNode<T> {
-  connect(): Disposable;
-}
+export interface ChildFieldNode<T> extends FieldNode<T>, ChildField {}
 
 export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
 
@@ -90,6 +95,7 @@ type SelectChildArrayKey<T, K extends keyof T> =
 export interface FieldArray<T> extends Field<readonly T[]> {
   getFields(): ReadonlyArray<FieldNode<T>>;
   subscribeFields(subscriber: FieldsSubscriber<T>): Disposable;
+  unsubscribeFields(subscriber: FieldsSubscriber<T>): void;
   append(value: T): void;
   prepend(value: T): void;
   insert(index: number, value: T): void;
@@ -98,8 +104,6 @@ export interface FieldArray<T> extends Field<readonly T[]> {
   swap(aIndex: number, bIndex: number): void;
 }
 
-export interface ChildFieldArray<T> extends FieldArray<T> {
-  connect(): Disposable;
-}
+export interface ChildFieldArray<T> extends FieldArray<T>, ChildField {}
 
 export type FieldsSubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;
