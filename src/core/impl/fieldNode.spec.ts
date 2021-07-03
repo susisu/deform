@@ -1772,6 +1772,17 @@ describe("FieldNodeImpl", () => {
   });
 
   describe("#disconnect", () => {
+    it("throws error if the field has no parent", () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(() => {
+        field.disconnect();
+      }).toThrowError("FieldNode '$root' has no parent");
+    });
+
     it("unsynchronizes a child with the parent", () => {
       const parent = new FieldNodeImpl({
         path: "$root",
