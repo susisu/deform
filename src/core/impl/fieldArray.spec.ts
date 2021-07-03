@@ -1,5 +1,5 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
-import { FieldNode } from "../form";
+import { FieldNode, ValidationRequest } from "../form";
 import { FieldArrayImpl } from "./fieldArray";
 
 describe("FieldArrayImpl", () => {
@@ -342,6 +342,84 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  describe("#setValue", () => {
+    it("sets the value of the field", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      const newValue = [1, 2];
+      fieldArray.setValue(newValue);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1, 2] }));
+
+      // does nothing if the same value is already set
+      fieldArray.setValue(newValue);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches only once when called multiple times", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setValue([1, 2]);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+
+      fieldArray.setValue([3]);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [3] }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [3] }));
+    });
+
+    it("triggers validation", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request1 = validator.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: [42] }));
+
+      const newValue = [1, 2];
+      fieldArray.setValue(newValue);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: [1, 2] }));
+
+      // does nothing if the same value is already set
+      fieldArray.setValue(newValue);
+      expect(validator).toHaveBeenCalledTimes(2);
     });
   });
 });
