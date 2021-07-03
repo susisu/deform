@@ -247,10 +247,10 @@ export abstract class FieldImpl<T> implements Field<T> {
     }
     const afterSetValue = this.beforeSetValue(value);
     this.value = value;
+    this.updateSnapshotValue();
     if (afterSetValue) {
       afterSetValue();
     }
-    this.updateSnapshotValue();
     return true;
   }
 
