@@ -89,7 +89,7 @@ type SelectChildArrayKey<T, K extends keyof T> =
 
 export interface FieldArray<T> extends Field<readonly T[]> {
   getFields(): ReadonlyArray<FieldNode<T>>;
-  subscribeFields(fieldsSubscriber: FieldsSubscriber<T>): Disposable;
+  subscribeFields(subscriber: FieldsSubscriber<T>): Disposable;
   append(value: T): void;
   prepend(value: T): void;
   insert(index: number, value: T): void;

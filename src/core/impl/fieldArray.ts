@@ -20,10 +20,14 @@ export type FieldArrayImplParams<T> = Readonly<{
 
 export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildFieldArray<T> {
   private children: Map<string, Child<readonly T[]>>;
+
   private current: readonly T[];
   private fields: ReadonlyArray<FieldNode<T>>;
   private indexByKey: ReadonlyMap<string, number>;
   private keyByIndex: readonly string[];
+
+  private fieldsSubscribers: Set<FieldsSubscriber<T>>;
+  private isFieldsDispatchQueued: boolean;
 
   constructor(params: FieldArrayImplParams<T>) {
     super({
@@ -34,10 +38,15 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       value: params.value,
     });
     this.children = new Map();
+
     this.current = [];
     this.fields = [];
     this.indexByKey = new Map();
     this.keyByIndex = [];
+
+    this.fieldsSubscribers = new Set();
+    this.isFieldsDispatchQueued = false;
+
     this.sync(this.value);
   }
 
@@ -68,6 +77,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   protected override beforeSetValue(value: readonly T[]): void {
     if (this.current !== value) {
       this.sync(value);
+      this.queueFieldsDispatch();
     }
   }
 
@@ -75,8 +85,36 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     return this.fields;
   }
 
-  subscribeFields(_fieldsSubscriber: FieldsSubscriber<T>): Disposable {
-    throw new Error("not implemented");
+  subscribeFields(subscriber: FieldsSubscriber<T>): Disposable {
+    this.fieldsSubscribers.add(subscriber);
+    return () => {
+      this.unsubscribeFields(subscriber);
+    };
+  }
+
+  private unsubscribeFields(subscriber: FieldsSubscriber<T>): void {
+    this.fieldsSubscribers.delete(subscriber);
+  }
+
+  private queueFieldsDispatch(): void {
+    if (this.isFieldsDispatchQueued) {
+      return;
+    }
+    this.isFieldsDispatchQueued = true;
+
+    window.queueMicrotask(() => {
+      this.isFieldsDispatchQueued = false;
+
+      const fields = this.fields;
+      for (const subscriber of [...this.fieldsSubscribers]) {
+        try {
+          subscriber(fields);
+        } catch (err: unknown) {
+          // eslint-disable-next-line no-console
+          console.error(err);
+        }
+      }
+    });
   }
 
   append(_value: T): void {
