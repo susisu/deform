@@ -1689,7 +1689,7 @@ describe("FieldNodeImpl", () => {
         value: [42],
         isTouched: false,
         isDirty: false,
-        errors: {},
+        errors: expect.any(Object), // TODO
         isPending: false,
       });
     });
