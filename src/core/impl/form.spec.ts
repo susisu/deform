@@ -71,7 +71,7 @@ describe("FormImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 1,
       });
       expect(subscriber).toHaveBeenNthCalledWith(2, {
         isSubmitting: false,
@@ -104,7 +104,7 @@ describe("FormImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 1,
       });
       expect(subscriber).toHaveBeenNthCalledWith(2, {
         isSubmitting: false,
@@ -154,6 +154,18 @@ describe("FormImpl", () => {
       form.subscribe(subscriber);
 
       const promise = form.submit();
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith({
+        isSubmitting: true,
+        submitCount: 1,
+      });
 
       // validation phase
       expect(validator).toHaveBeenCalledTimes(2);
@@ -165,18 +177,6 @@ describe("FormImpl", () => {
         })
       );
       expect(handler).toHaveBeenCalledTimes(0);
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
-
-      expect(subscriber).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith({
-        isSubmitting: true,
-        submitCount: 0,
-      });
 
       // submit phase
       vRequest2.resolve(false);
@@ -191,7 +191,7 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 1,
       });
 
       resolves[0]();
@@ -231,8 +231,11 @@ describe("FormImpl", () => {
       });
 
       const promise = form.submit();
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
 
-      // validation phase
       expect(validator).toHaveBeenCalledTimes(2);
       const vRequest2 = validator.mock.calls[1][0];
       expect(vRequest2).toEqual(
@@ -242,18 +245,13 @@ describe("FormImpl", () => {
         })
       );
       expect(handler).toHaveBeenCalledTimes(0);
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
 
-      // submit phase
       vRequest2.resolve(true);
       await expect(promise).rejects.toThrowError('Invalid: {"foo":true}');
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
     });
 
@@ -276,21 +274,22 @@ describe("FormImpl", () => {
       });
 
       const promise = form.submit();
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
+
       expect(handler).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(handler).toHaveBeenCalledTimes(1);
       const sRequest = handler.mock.calls[0][0];
       expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
 
       rejects[0](new Error("test error"));
       await expect(promise).rejects.toThrowError("test error");
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
     });
 
@@ -322,7 +321,7 @@ describe("FormImpl", () => {
       const promise = form.submit({ signal: controller.signal });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
 
       await expect(promise).rejects.toThrowError("Aborted");
@@ -330,7 +329,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
     });
 
@@ -361,6 +360,10 @@ describe("FormImpl", () => {
 
       const controller = new window.AbortController();
       const promise = form.submit({ signal: controller.signal });
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
 
       // validation phase
       expect(validator).toHaveBeenCalledTimes(2);
@@ -372,10 +375,6 @@ describe("FormImpl", () => {
         })
       );
       expect(handler).toHaveBeenCalledTimes(0);
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
 
       // submit phase
       vRequest2.resolve(false);
@@ -386,7 +385,7 @@ describe("FormImpl", () => {
       expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 1,
       });
 
       const onAbort = jest.fn(() => {});
@@ -398,7 +397,7 @@ describe("FormImpl", () => {
       await expect(promise).rejects.toThrowError("Aborted");
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
     });
 
@@ -428,7 +427,7 @@ describe("FormImpl", () => {
       expect(sRequest1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 1,
       });
 
       const promise2 = form.submit();
@@ -439,14 +438,14 @@ describe("FormImpl", () => {
       expect(sRequest2).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        submitCount: 0,
+        submitCount: 2,
       });
 
       resolves[0]();
       await promise1;
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        submitCount: 1,
+        submitCount: 2,
       });
 
       resolves[1]();
@@ -454,67 +453,6 @@ describe("FormImpl", () => {
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 2,
-      });
-    });
-
-    it("does not increment submitCount if the form is reset after submitted", async () => {
-      const resolves: Array<() => void> = [];
-      const handler = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) =>
-          new Promise<void>(resolve => {
-            resolves.push(resolve);
-          })
-      );
-      const form = new FormImpl({
-        defaultValue: { x: 0, y: 1 },
-        value: { x: 42, y: 43 },
-        handler,
-      });
-      expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 0,
-      });
-
-      const promise1 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
-      expect(handler).toHaveBeenCalledTimes(1);
-      const sRequest1 = handler.mock.calls[0][0];
-      expect(sRequest1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
-
-      form.reset();
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
-
-      const promise2 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
-      expect(handler).toHaveBeenCalledTimes(2);
-      const sRequest2 = handler.mock.calls[1][0];
-      expect(sRequest2).toEqual(expect.objectContaining({ value: { x: 0, y: 1 } }));
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
-
-      resolves[0]();
-      await promise1;
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 0,
-      });
-
-      resolves[1]();
-      await promise2;
-      expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 1,
       });
     });
   });

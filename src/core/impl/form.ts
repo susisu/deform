@@ -22,8 +22,6 @@ export class FormImpl<T> implements Form<T> {
 
   private handler: FormSubmitHandler<T>;
 
-  private sessionId: string;
-
   private pendingRequestIds: Set<string>;
   private submitCount: number;
 
@@ -39,8 +37,6 @@ export class FormImpl<T> implements Form<T> {
     });
 
     this.handler = params.handler;
-
-    this.sessionId = `FormSession/${uniqueId()}`;
 
     this.pendingRequestIds = new Set();
     this.submitCount = 0;
@@ -119,20 +115,24 @@ export class FormImpl<T> implements Form<T> {
 
   async submit(options?: FormSubmitOptions): Promise<void> {
     const signal = options?.signal;
-    const controller = new window.AbortController();
-    if (signal) {
-      if (signal.aborted) {
-        throw new Error("Aborted");
-      }
-      signal.addEventListener("abort", () => {
-        controller.abort();
-      });
-    }
-    const sessionId = this.sessionId;
+
+    const handler = this.handler;
     const id = `FormSubmitRequest/${uniqueId()}`;
     this.pendingRequestIds.add(id);
     this.updateStateIsSubmitting();
+    this.submitCount += 1;
+    this.updateStateSubmitCount();
+
     try {
+      const controller = new window.AbortController();
+      if (signal) {
+        if (signal.aborted) {
+          throw new Error("Aborted");
+        }
+        signal.addEventListener("abort", () => {
+          controller.abort();
+        });
+      }
       const { value, errors } = await this.root.validateOnce({ signal: controller.signal });
       if (!isValid(errors)) {
         throw new Error(`Invalid: ${JSON.stringify(errors)}`); // more useful error?
@@ -141,12 +141,8 @@ export class FormImpl<T> implements Form<T> {
         controller.signal.addEventListener("abort", () => {
           reject(new Error("Aborted"));
         });
-        this.handler({ id, value, signal: controller.signal }).then(resolve, reject);
+        handler({ id, value, signal: controller.signal }).then(resolve, reject);
       });
-      if (this.sessionId === sessionId) {
-        this.submitCount += 1;
-        this.updateStateSubmitCount();
-      }
     } finally {
       this.pendingRequestIds.delete(id);
       this.updateStateIsSubmitting();
@@ -161,7 +157,5 @@ export class FormImpl<T> implements Form<T> {
 
     this.submitCount = 0;
     this.updateStateSubmitCount();
-
-    this.sessionId = `FormSession/${uniqueId()}`;
   }
 }
