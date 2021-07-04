@@ -30,18 +30,4 @@ export type Child<T> = Readonly<{
   validateOnce: (signal: AbortSignal) => Promise<Errors>;
 }>;
 
-export type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;
-
-export type MergeErrorsParams = Readonly<{
-  childrenErrors: Errors;
-  validationErrors: Errors;
-  customErrors: Errors;
-}>;
-
-export function mergeErrors(params: MergeErrorsParams): Errors {
-  return {
-    ...params.childrenErrors,
-    ...params.validationErrors,
-    ...params.customErrors,
-  };
-}
+export type KeyMapper = (key: PropertyKey) => PropertyKey;

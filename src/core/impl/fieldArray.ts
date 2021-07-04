@@ -7,9 +7,9 @@ import {
   FieldsSubscriber,
   isValid,
 } from "../form";
-import { FieldImpl, KeyMapper } from "./field";
+import { FieldImpl } from "./field";
 import { FieldNodeImpl } from "./fieldNode";
-import { Child, Getter, Parent, Setter, uniqueId } from "./shared";
+import { Child, Getter, KeyMapper, Parent, Setter, uniqueId } from "./shared";
 
 export type FieldArrayImplParams<T> = Readonly<{
   path: string;

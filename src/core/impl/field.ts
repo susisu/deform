@@ -10,7 +10,7 @@ import {
   ValidateOnceResult,
   Validator,
 } from "../form";
-import { Child, Getter, mergeErrors, Parent, PendingValidation, uniqueId } from "./shared";
+import { Child, Getter, KeyMapper, Parent, uniqueId } from "./shared";
 
 export type FieldImplParams<T> = Readonly<{
   className: string;
@@ -621,4 +621,18 @@ export abstract class FieldImpl<T> implements Field<T> {
   ): Promise<Errors>;
 }
 
-export type KeyMapper = (key: PropertyKey) => PropertyKey;
+type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;
+
+type MergeErrorsParams = Readonly<{
+  childrenErrors: Errors;
+  validationErrors: Errors;
+  customErrors: Errors;
+}>;
+
+function mergeErrors(params: MergeErrorsParams): Errors {
+  return {
+    ...params.childrenErrors,
+    ...params.validationErrors,
+    ...params.customErrors,
+  };
+}
