@@ -23,8 +23,8 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
 
   private current: readonly T[];
   private fields: ReadonlyArray<ChildFieldNode<T>>;
-  private indexByKey: ReadonlyMap<string, number>;
   private keyByIndex: readonly string[];
+  private indexByKey: ReadonlyMap<string, number>;
 
   private fieldsSubscribers: Set<FieldsSubscriber<T>>;
   private isFieldsDispatchQueued: boolean;
@@ -42,8 +42,8 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
 
     this.current = [];
     this.fields = [];
-    this.indexByKey = new Map();
     this.keyByIndex = [];
+    this.indexByKey = new Map();
 
     this.fieldsSubscribers = new Set();
     this.isFieldsDispatchQueued = false;
@@ -60,22 +60,22 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     }
 
     const fields: Array<ChildFieldNode<T>> = [];
-    const indexByKey: Map<string, number> = new Map();
     const keyByIndex: string[] = [];
     for (let index = 0; index < value.length; index++) {
       const [key, field] = this.createChild(value[index]);
       fields.push(field);
-      indexByKey.set(key, index);
       keyByIndex.push(key);
     }
+    const indexByKey = inverseMap(keyByIndex);
+
     this.current = value;
     this.fields = fields;
-    this.indexByKey = indexByKey;
     this.keyByIndex = keyByIndex;
-    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
+    this.indexByKey = indexByKey;
     this.queueFieldsDispatch();
 
     return () => {
+      this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
       for (const field of fields) {
         field.connect();
       }
@@ -129,31 +129,38 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   append(value: T): void {
-    const [key, field] = this.createChild(value);
-
     const newValue = append(this.value, value);
-    this.current = newValue;
-    this.fields = append(this.fields, field);
-    this.indexByKey = new Map([...this.indexByKey, [key, newValue.length - 1]]);
-    this.keyByIndex = append(this.keyByIndex, key);
-    this.setValue(newValue);
+    const [key, field] = this.createChild(value);
+    const fields = append(this.fields, field);
+    const keyByIndex = append(this.keyByIndex, key);
+    const indexByKey = inverseMap(keyByIndex);
 
+    this.current = newValue;
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
+    this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
     field.connect();
   }
 
   prepend(value: T): void {
-    const [key, field] = this.createChild(value);
-
     const newValue = prepend(this.value, value);
-    this.current = newValue;
-    this.fields = prepend(this.fields, field);
-    this.indexByKey = new Map([
-      ...[...this.indexByKey].map(([key, i]) => [key, i + 1] as const),
-      [key, 0],
-    ]);
-    this.keyByIndex = prepend(this.keyByIndex, key);
-    this.setValue(newValue);
+    const [key, field] = this.createChild(value);
+    const fields = prepend(this.fields, field);
+    const keyByIndex = prepend(this.keyByIndex, key);
+    const indexByKey = inverseMap(keyByIndex);
 
+    this.current = newValue;
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
+    this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
     field.connect();
   }
 
@@ -164,18 +171,20 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       );
     }
 
-    const [key, field] = this.createChild(value);
-
     const newValue = insert(this.value, index, value);
-    this.current = newValue;
-    this.fields = insert(this.fields, index, field);
-    this.indexByKey = new Map([
-      ...[...this.indexByKey].map(([key, i]) => [key, i >= index ? i + 1 : i] as const),
-      [key, index],
-    ]);
-    this.keyByIndex = insert(this.keyByIndex, index, key);
-    this.setValue(newValue);
+    const [key, field] = this.createChild(value);
+    const fields = insert(this.fields, index, field);
+    const keyByIndex = insert(this.keyByIndex, index, key);
+    const indexByKey = inverseMap(keyByIndex);
 
+    this.current = newValue;
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
+    this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
     field.connect();
   }
 
@@ -190,15 +199,18 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     field.disconnect();
 
     const newValue = remove(this.value, index);
+    const fields = remove(this.fields, index);
+    const keyByIndex = remove(this.keyByIndex, index);
+    const indexByKey = inverseMap(keyByIndex);
+
     this.current = newValue;
-    this.fields = remove(this.fields, index);
-    this.indexByKey = new Map(
-      [...this.indexByKey]
-        .filter(([_, i]) => i !== index)
-        .map(([key, i]) => [key, i > index ? i - 1 : i] as const)
-    );
-    this.keyByIndex = remove(this.keyByIndex, index);
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
     this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
   }
 
   move(_fromIndex: number, _toIndex: number): void {
@@ -346,6 +358,10 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     );
     return Object.fromEntries(entries);
   }
+}
+
+function inverseMap(keyByIndex: readonly string[]): ReadonlyMap<string, number> {
+  return new Map(keyByIndex.map((key, index) => [key, index]));
 }
 
 function createChildrenErrorsKeyMapper(indexByKey: ReadonlyMap<string, number>): KeyMapper {

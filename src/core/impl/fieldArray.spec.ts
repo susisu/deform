@@ -2254,21 +2254,28 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#append", () => {
-    it("appends a field at the last of the array", () => {
+    it("appends a field at the last of the array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
         value: [42],
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42], errors: { 0: false } })
+      );
       const fields1 = fieldArray.getFields();
       expect(fields1).toHaveLength(1);
       expect(fields1.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
       ]);
 
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribeFields(subscriber);
+
       fieldArray.append(1);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 1], errors: { 0: false, 1: false } })
+      );
       const fields2 = fieldArray.getFields();
       expect(fields2).toHaveLength(2);
       expect(fields2[0].id).toBe(fields1[0].id);
@@ -2277,8 +2284,15 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 1, value: 1 }),
       ]);
 
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+
       fields2[1].setValue(2);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 2] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 2], errors: { 0: false, 1: false } })
+      );
       const fields3 = fieldArray.getFields();
       expect(fields3).toHaveLength(2);
       expect(fields3[0].id).toBe(fields2[0].id);
@@ -2287,25 +2301,36 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 1, value: 2 }),
       ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("#prepend", () => {
-    it("prepends a field at the head of the array", () => {
+    it("prepends a field at the head of the array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
         value: [42],
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42], errors: { 0: false } })
+      );
       const fields1 = fieldArray.getFields();
       expect(fields1).toHaveLength(1);
       expect(fields1.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
       ]);
 
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribeFields(subscriber);
+
       fieldArray.prepend(1);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [1, 42], errors: { 0: false, 1: false } })
+      );
       const fields2 = fieldArray.getFields();
       expect(fields2).toHaveLength(2);
       expect(fields2[1].id).toBe(fields1[0].id);
@@ -2314,8 +2339,15 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 42, value: 42 }),
       ]);
 
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+
       fields2[0].setValue(2);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [2, 42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [2, 42], errors: { 0: false, 1: false } })
+      );
       const fields3 = fieldArray.getFields();
       expect(fields3).toHaveLength(2);
       expect(fields3[0].id).toBe(fields2[0].id);
@@ -2324,17 +2356,23 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 1, value: 2 }),
         expect.objectContaining({ defaultValue: 42, value: 42 }),
       ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("#insert", () => {
-    it("inserts a field at the specified index of the array", () => {
+    it("inserts a field at the specified index of the array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
         value: [42, 43],
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 43] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 43], errors: { 0: false, 1: false } })
+      );
       const fields1 = fieldArray.getFields();
       expect(fields1).toHaveLength(2);
       expect(fields1.map(field => field.getSnapshot())).toEqual([
@@ -2342,8 +2380,13 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 43, value: 43 }),
       ]);
 
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribeFields(subscriber);
+
       fieldArray.insert(1, 1);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1, 43] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 1, 43], errors: { 0: false, 1: false, 2: false } })
+      );
       const fields2 = fieldArray.getFields();
       expect(fields2).toHaveLength(3);
       expect(fields2[0].id).toBe(fields1[0].id);
@@ -2354,8 +2397,15 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 43, value: 43 }),
       ]);
 
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+
       fields2[1].setValue(2);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 2, 43] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 2, 43], errors: { 0: false, 1: false, 2: false } })
+      );
       const fields3 = fieldArray.getFields();
       expect(fields3).toHaveLength(3);
       expect(fields3[0].id).toBe(fields2[0].id);
@@ -2366,6 +2416,10 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 1, value: 2 }),
         expect.objectContaining({ defaultValue: 43, value: 43 }),
       ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
 
     it("throws error if the index is out of range", () => {
@@ -2384,13 +2438,15 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#remove", () => {
-    it("removes a field at the specified index of the array", () => {
+    it("removes a field at the specified index of the array", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
         value: [42, 43, 44],
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 43, 44] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 43, 44], errors: { 0: false, 1: false, 2: false } })
+      );
       const fields1 = fieldArray.getFields();
       expect(fields1).toHaveLength(3);
       expect(fields1.map(field => field.getSnapshot())).toEqual([
@@ -2399,8 +2455,13 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 44, value: 44 }),
       ]);
 
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribeFields(subscriber);
+
       fieldArray.remove(1);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 44] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 44], errors: { 0: false, 1: false } })
+      );
       const fields2 = fieldArray.getFields();
       expect(fields2).toHaveLength(2);
       expect(fields2[0].id).toBe(fields1[0].id);
@@ -2410,8 +2471,15 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 44, value: 44 }),
       ]);
 
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+
       fields2[1].setValue(1);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 1], errors: { 0: false, 1: false } })
+      );
       const fields3 = fieldArray.getFields();
       expect(fields3).toHaveLength(2);
       expect(fields3[0].id).toBe(fields2[0].id);
@@ -2420,6 +2488,10 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 44, value: 1 }),
       ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
     });
 
     it("throws error if the index is out of range", () => {
