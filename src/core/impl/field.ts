@@ -444,31 +444,41 @@ export abstract class FieldImpl<T> implements Field<T> {
     return Object.fromEntries(entries);
   }
 
-  async validateOnce(options?: ValidateOnceOptions): Promise<ValidateOnceResult<T>> {
-    const value = this.value;
+  validateOnce(options?: ValidateOnceOptions): Promise<ValidateOnceResult<T>> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
       if (signal.aborted) {
-        throw new Error("Aborted");
+        controller.abort();
       }
       signal.addEventListener("abort", () => {
         controller.abort();
       });
     }
+
+    const value = this.value;
     const customErrors = this.customErrors;
     const childrenErrorsKeyMapper = this.childrenErrorsKeyMapper;
-    try {
-      const [childrenErrors, validationErrors] = await Promise.all([
-        this.validateChildrenOnce(childrenErrorsKeyMapper, controller.signal),
-        this.runAllValidatorsOnce(value, controller.signal),
-      ]);
-      const errors = mergeErrors({ childrenErrors, validationErrors, customErrors });
-      return { value, errors };
-    } catch (err: unknown) {
-      controller.abort();
-      throw err;
-    }
+
+    return new Promise<ValidateOnceResult<T>>((resolve, reject) => {
+      if (controller.signal.aborted) {
+        reject(new Error("Aborted"));
+      }
+      controller.signal.addEventListener("abort", () => {
+        reject(new Error("Aborted"));
+      });
+      (async () => {
+        const [childrenErrors, validationErrors] = await Promise.all([
+          this.validateChildrenOnce(childrenErrorsKeyMapper, controller.signal),
+          this.runAllValidatorsOnce(value, controller.signal),
+        ]);
+        const errors = mergeErrors({ childrenErrors, validationErrors, customErrors });
+        return { value, errors };
+      })().then(resolve, (err: unknown) => {
+        reject(err);
+        controller.abort();
+      });
+    });
   }
 
   protected setChildIsTouched(key: PropertyKey, isTouched: boolean): void {

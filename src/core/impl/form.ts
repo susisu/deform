@@ -145,7 +145,10 @@ export class FormImpl<T> implements Form<T> {
           throw new Error(`Invalid: ${JSON.stringify(errors)}`); // more useful error?
         }
         await handler({ id, value, signal: controller.signal });
-      })().then(resolve, reject);
+      })().then(resolve, (err: unknown) => {
+        reject(err);
+        controller.abort();
+      });
     }).finally(() => {
       this.pendingRequestIds.delete(id);
       this.updateStateIsSubmitting();
