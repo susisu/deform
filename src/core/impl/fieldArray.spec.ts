@@ -2790,7 +2790,7 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
 
       // swap with the same index = do nothing
-      fieldArray.move(2, 2);
+      fieldArray.swap(2, 2);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 1, 44, 2, 46] })
       );
