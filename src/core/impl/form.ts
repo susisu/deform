@@ -40,7 +40,10 @@ export class FormImpl<T> implements Form<T> {
     throw new Error("not implemented");
   }
 
-  reset(_value?: T): void {
-    throw new Error("not implemented");
+  reset(value?: T): void {
+    if (value !== undefined) {
+      this.root.setDefaultValue(value);
+    }
+    this.root.reset();
   }
 }

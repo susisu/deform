@@ -750,7 +750,7 @@ describe("FieldArrayImpl", () => {
     });
   });
 
-  describe("reset", () => {
+  describe("#reset", () => {
     it("resets the field array's state", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",

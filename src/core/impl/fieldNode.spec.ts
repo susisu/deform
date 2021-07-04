@@ -413,7 +413,7 @@ describe("FieldNodeImpl", () => {
     });
   });
 
-  describe("reset", () => {
+  describe("#reset", () => {
     it("resets the field's state", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
