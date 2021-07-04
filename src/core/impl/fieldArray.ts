@@ -139,8 +139,18 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     field.connect();
   }
 
-  prepend(_value: T): void {
-    throw new Error("not implemented");
+  prepend(value: T): void {
+    const newValue = prepend(this.value, value);
+    const [key, field] = this.createChild(value);
+    this.current = newValue;
+    this.fields = prepend(this.fields, field);
+    this.indexByKey = new Map([
+      ...[...this.indexByKey].map(([key, index]) => [key, index + 1] as const),
+      [key, 0],
+    ]);
+    this.keyByIndex = prepend(this.keyByIndex, key);
+    this.setValue(newValue);
+    field.connect();
   }
 
   insert(_index: number, _value: T): void {
@@ -319,4 +329,8 @@ function set<T>(xs: readonly T[], index: number, x: T): readonly T[] {
 
 function append<T>(xs: readonly T[], x: T): readonly T[] {
   return [...xs, x];
+}
+
+function prepend<T>(xs: readonly T[], x: T): readonly T[] {
+  return [x, ...xs];
 }
