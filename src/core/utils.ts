@@ -12,7 +12,7 @@ export function createFieldNode<T>(params: FieldNodeParams<T>): FieldNode<T> {
   return new FieldNodeImpl({
     path: params.path ?? "$root",
     defaultValue: params.defaultValue,
-    value: params.value ?? params.defaultValue,
+    value: params.value !== undefined ? params.value : params.defaultValue,
   });
 }
 
@@ -26,6 +26,6 @@ export function createFieldArray<T>(params: FieldArrayParams<T>): FieldArray<T> 
   return new FieldArrayImpl({
     path: params.path ?? "$root",
     defaultValue: params.defaultValue,
-    value: params.value ?? params.defaultValue,
+    value: params.value !== undefined ? params.value : params.defaultValue,
   });
 }
