@@ -2661,16 +2661,16 @@ describe("FieldArrayImpl", () => {
       });
       expect(() => {
         fieldArray.move(-1, 0);
-      }).toThrowError("FieldArray '$root' failed to move: index '-1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to move: fromIndex '-1' is out of range");
       expect(() => {
         fieldArray.move(1, 0);
-      }).toThrowError("FieldArray '$root' failed to move: index '1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to move: fromIndex '1' is out of range");
       expect(() => {
         fieldArray.move(0, -1);
-      }).toThrowError("FieldArray '$root' failed to move: index '-1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to move: toIndex '-1' is out of range");
       expect(() => {
         fieldArray.move(0, 1);
-      }).toThrowError("FieldArray '$root' failed to move: index '1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to move: toIndex '1' is out of range");
     });
   });
 
@@ -2822,16 +2822,16 @@ describe("FieldArrayImpl", () => {
       });
       expect(() => {
         fieldArray.swap(-1, 0);
-      }).toThrowError("FieldArray '$root' failed to swap: index '-1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to swap: aIndex '-1' is out of range");
       expect(() => {
         fieldArray.swap(1, 0);
-      }).toThrowError("FieldArray '$root' failed to swap: index '1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to swap: aIndex '1' is out of range");
       expect(() => {
         fieldArray.swap(0, -1);
-      }).toThrowError("FieldArray '$root' failed to swap: index '-1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to swap: bIndex '-1' is out of range");
       expect(() => {
         fieldArray.swap(0, 1);
-      }).toThrowError("FieldArray '$root' failed to swap: index '1' is out of range");
+      }).toThrowError("FieldArray '$root' failed to swap: bIndex '1' is out of range");
     });
   });
 });

@@ -216,12 +216,12 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   move(fromIndex: number, toIndex: number): void {
     if (fromIndex < 0 || fromIndex > this.value.length - 1) {
       throw new Error(
-        `FieldArray '${this.path}' failed to move: index '${fromIndex}' is out of range`
+        `FieldArray '${this.path}' failed to move: fromIndex '${fromIndex}' is out of range`
       );
     }
     if (toIndex < 0 || toIndex > this.value.length - 1) {
       throw new Error(
-        `FieldArray '${this.path}' failed to move: index '${toIndex}' is out of range`
+        `FieldArray '${this.path}' failed to move: toIndex '${toIndex}' is out of range`
       );
     }
     if (fromIndex === toIndex) {
@@ -246,12 +246,12 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   swap(aIndex: number, bIndex: number): void {
     if (aIndex < 0 || aIndex > this.value.length - 1) {
       throw new Error(
-        `FieldArray '${this.path}' failed to swap: index '${aIndex}' is out of range`
+        `FieldArray '${this.path}' failed to swap: aIndex '${aIndex}' is out of range`
       );
     }
     if (bIndex < 0 || bIndex > this.value.length - 1) {
       throw new Error(
-        `FieldArray '${this.path}' failed to swap: index '${bIndex}' is out of range`
+        `FieldArray '${this.path}' failed to swap: bIndex '${bIndex}' is out of range`
       );
     }
     if (aIndex === bIndex) {
