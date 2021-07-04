@@ -25,7 +25,7 @@ export class FormImpl<T> implements Form<T> {
   private sessionId: string;
 
   private pendingRequestIds: Set<string>;
-  private isSubmitted: boolean;
+  private submitCount: number;
 
   private state: FormState;
   private subscribers: Set<FormStateSubscriber>;
@@ -43,11 +43,11 @@ export class FormImpl<T> implements Form<T> {
     this.sessionId = `FormSession/${uniqueId()}`;
 
     this.pendingRequestIds = new Set();
-    this.isSubmitted = false;
+    this.submitCount = 0;
 
     this.state = {
       isSubmitting: this.calcStateIsSubmitting(),
-      isSubmitted: this.calcStateIsSubmitted(),
+      submitCount: this.calcStateSubmitCount(),
     };
     this.subscribers = new Set();
     this.isDispatchQueued = false;
@@ -58,9 +58,9 @@ export class FormImpl<T> implements Form<T> {
     return this.pendingRequestIds.size > 0;
   }
 
-  // depends on: isSubmitted
-  private calcStateIsSubmitted(): boolean {
-    return this.isSubmitted;
+  // depends on: submitCount
+  private calcStateSubmitCount(): number {
+    return this.submitCount;
   }
 
   getState(): FormState {
@@ -108,12 +108,12 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  private updateStateIsSubmitted(): void {
-    const isSubmitted = this.calcStateIsSubmitted();
-    if (this.state.isSubmitted === isSubmitted) {
+  private updateStateSubmitCount(): void {
+    const submitCount = this.calcStateSubmitCount();
+    if (this.state.submitCount === submitCount) {
       return;
     }
-    this.state = { ...this.state, isSubmitted };
+    this.state = { ...this.state, submitCount };
     this.queueDispatch();
   }
 
@@ -144,8 +144,8 @@ export class FormImpl<T> implements Form<T> {
         this.handler({ id, value, signal: controller.signal }).then(resolve, reject);
       });
       if (this.sessionId === sessionId) {
-        this.isSubmitted = true;
-        this.updateStateIsSubmitted();
+        this.submitCount += 1;
+        this.updateStateSubmitCount();
       }
     } finally {
       this.pendingRequestIds.delete(id);
@@ -159,8 +159,8 @@ export class FormImpl<T> implements Form<T> {
     }
     this.root.reset();
 
-    this.isSubmitted = false;
-    this.updateStateIsSubmitted();
+    this.submitCount = 0;
+    this.updateStateSubmitCount();
 
     this.sessionId = `FormSession/${uniqueId()}`;
   }

@@ -44,13 +44,13 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       await form.submit();
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
     });
   });
@@ -71,11 +71,11 @@ describe("FormImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
       expect(subscriber).toHaveBeenNthCalledWith(2, {
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
 
       // can unsubscribe
@@ -104,11 +104,11 @@ describe("FormImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
       expect(subscriber).toHaveBeenNthCalledWith(2, {
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
 
       form.unsubscribe(subscriber);
@@ -147,7 +147,7 @@ describe("FormImpl", () => {
       vRequest1.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const subscriber = jest.fn(() => {});
@@ -167,7 +167,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -175,7 +175,7 @@ describe("FormImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       // submit phase
@@ -191,19 +191,19 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       resolves[0]();
       await promise;
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
     });
 
@@ -227,7 +227,7 @@ describe("FormImpl", () => {
       vRequest1.resolve(true);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise = form.submit();
@@ -244,7 +244,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       // submit phase
@@ -253,7 +253,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
     });
 
@@ -272,7 +272,7 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise = form.submit();
@@ -283,14 +283,14 @@ describe("FormImpl", () => {
       expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       rejects[0](new Error("test error"));
       await expect(promise).rejects.toThrowError("test error");
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
     });
 
@@ -314,7 +314,7 @@ describe("FormImpl", () => {
       vRequest.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const controller = new window.AbortController();
@@ -322,7 +322,7 @@ describe("FormImpl", () => {
       const promise = form.submit({ signal: controller.signal });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       await expect(promise).rejects.toThrowError("Aborted");
@@ -330,7 +330,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
     });
 
@@ -356,7 +356,7 @@ describe("FormImpl", () => {
       vRequest1.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const controller = new window.AbortController();
@@ -374,7 +374,7 @@ describe("FormImpl", () => {
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       // submit phase
@@ -386,7 +386,7 @@ describe("FormImpl", () => {
       expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const onAbort = jest.fn(() => {});
@@ -398,7 +398,7 @@ describe("FormImpl", () => {
       await expect(promise).rejects.toThrowError("Aborted");
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
     });
 
@@ -417,7 +417,7 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise1 = form.submit();
@@ -428,7 +428,7 @@ describe("FormImpl", () => {
       expect(sRequest1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise2 = form.submit();
@@ -439,25 +439,25 @@ describe("FormImpl", () => {
       expect(sRequest2).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       resolves[0]();
       await promise1;
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: true,
+        submitCount: 1,
       });
 
       resolves[1]();
       await promise2;
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 2,
       });
     });
 
-    it("does not set isSubmitted = true if the form is reset after submitted", async () => {
+    it("does not increment submitCount if the form is reset after submitted", async () => {
       const resolves: Array<() => void> = [];
       const handler = jest.fn(
         (_: FormSubmitRequest<{ x: number; y: number }>) =>
@@ -472,7 +472,7 @@ describe("FormImpl", () => {
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise1 = form.submit();
@@ -483,13 +483,13 @@ describe("FormImpl", () => {
       expect(sRequest1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       form.reset();
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       const promise2 = form.submit();
@@ -500,21 +500,21 @@ describe("FormImpl", () => {
       expect(sRequest2).toEqual(expect.objectContaining({ value: { x: 0, y: 1 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       resolves[0]();
       await promise1;
       expect(form.getState()).toEqual({
         isSubmitting: true,
-        isSubmitted: false,
+        submitCount: 0,
       });
 
       resolves[1]();
       await promise2;
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
     });
   });
@@ -528,13 +528,13 @@ describe("FormImpl", () => {
       await form.submit();
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: true,
+        submitCount: 1,
       });
 
       form.reset();
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        isSubmitted: false,
+        submitCount: 0,
       });
     });
 

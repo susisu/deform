@@ -124,7 +124,7 @@ export interface Form<T> {
 
 export type FormState = Readonly<{
   isSubmitting: boolean;
-  isSubmitted: boolean;
+  submitCount: number;
 }>;
 
 export type FormStateSubscriber = (state: FormState) => void;
