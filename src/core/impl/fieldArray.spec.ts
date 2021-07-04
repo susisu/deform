@@ -1,6 +1,7 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
 import { FieldNode, ValidationRequest, Validator } from "../form";
 import { FieldArrayImpl } from "./fieldArray";
+import { FieldNodeImpl } from "./fieldNode";
 
 describe("FieldArrayImpl", () => {
   describe("#id", () => {
@@ -1834,6 +1835,421 @@ describe("FieldArrayImpl", () => {
         value: [42],
         errors: { 0: false },
       });
+    });
+  });
+
+  describe("#connect", () => {
+    it("throws error if the field array has no parent", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(() => {
+        fieldArray.connect();
+      }).toThrowError("FieldArray '$root' has no parent");
+    });
+
+    it("throws error if the field array is already connected", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: [1] },
+        value: { x: [42], y: [43] },
+      });
+      const child = parent.createChildArray("x");
+      child.connect();
+      expect(() => {
+        child.connect();
+      }).toThrowError("FieldArray '$root.x' is already connected");
+    });
+
+    it("throws error when trying to connect two children for the same key", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: [1] },
+        value: { x: [42], y: [43] },
+      });
+      const child1 = parent.createChildArray("x");
+      const child2 = parent.createChildArray("x");
+      child1.connect();
+      expect(() => {
+        child2.connect();
+      }).toThrowError("FieldNode '$root' already has a child 'x'");
+    });
+
+    it("synchronizes a child with the parent only if they are connected", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [42], y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      parent.setValue({ x: [2], y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [2], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      child.setValue([4]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [2], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      // sync
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [2], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [2] }));
+
+      parent.setValue({ x: [5], y: 6 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [5], y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [5] }));
+
+      child.setValue([7]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [7], y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [7] }));
+
+      // unsync
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [7], y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [7] }));
+
+      parent.setValue({ x: [8], y: 9 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [8], y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [7] }));
+
+      child.setValue([10]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [8], y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [10] }));
+
+      // resync
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [8], y: 9 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [8] }));
+    });
+
+    it("synchronizes the default value of a child with the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [0], y: 1 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [0] }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [0], y: 1 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [0] }));
+
+      parent.setDefaultValue({ x: [2], y: 3 });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [2], y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [2] }));
+
+      child.setDefaultValue([4]);
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [4], y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [4] }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [4], y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [4] }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ defaultValue: { x: [4], y: 3 } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ defaultValue: [4] }));
+    });
+
+    it("synchronizes the value of a child with the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [42], y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [42], y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      parent.setValue({ x: [2], y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [2], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [2] }));
+
+      child.setValue([4]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [4], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [4], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [4], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+    });
+
+    it("synchronizes the touched state from a child to the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      child.setTouched();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+    });
+
+    it("does not synchronize the touched state from the parent to a child", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      const disconnect = child.connect();
+      parent.setTouched();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+    });
+
+    it("synchronizes the dirty state from a child to the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+
+      child.setDirty();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+    });
+
+    it("does not synchronize the dirty state from the parent to a child", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      const disconnect = child.connect();
+      parent.setDirty();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+    });
+
+    it("synchronizes the errors from a child to the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: false } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      child.setCustomErrors({ foo: {} });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: true } }));
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: {} } })
+      );
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: {} }));
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: {} } })
+      );
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: true } }));
+      expect(child.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: {} } })
+      );
+    });
+
+    it("does not synchronize the errors from the parent to a child", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: false } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      parent.setCustomErrors({ foo: {} });
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false, foo: {} } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: {} } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { x: false, foo: {} } })
+      );
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
+    });
+
+    it("synchronizes the pending state from a child to the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+
+      child.addValidator("foo", () => {});
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+    });
+
+    it("does not synchronize the pending state from the parent to a child", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      const disconnect = child.connect();
+      parent.addValidator("foo", () => {});
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
+    });
+  });
+
+  describe("#disconnect", () => {
+    it("throws error if the field array has no parent", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(() => {
+        fieldArray.disconnect();
+      }).toThrowError("FieldArray '$root' has no parent");
+    });
+
+    it("unsynchronizes a child with the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [42], y: 43 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+
+      parent.setValue({ x: [2], y: 3 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [2], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [2] }));
+
+      child.setValue([4]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [4], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      // unsync
+      child.disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [4], y: 3 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      parent.setValue({ x: [5], y: 6 });
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [5], y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
+
+      child.setValue([7]);
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ value: { x: [5], y: 6 } }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [7] }));
     });
   });
 });
