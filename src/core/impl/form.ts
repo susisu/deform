@@ -113,8 +113,17 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  async submit(options?: FormSubmitOptions): Promise<void> {
+  submit(options?: FormSubmitOptions): Promise<void> {
     const signal = options?.signal;
+    const controller = new window.AbortController();
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort();
+      }
+      signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
 
     const handler = this.handler;
     const id = `FormSubmitRequest/${uniqueId()}`;
@@ -123,30 +132,24 @@ export class FormImpl<T> implements Form<T> {
     this.submitCount += 1;
     this.updateStateSubmitCount();
 
-    try {
-      const controller = new window.AbortController();
-      if (signal) {
-        if (signal.aborted) {
-          throw new Error("Aborted");
-        }
-        signal.addEventListener("abort", () => {
-          controller.abort();
-        });
+    return new Promise<void>((resolve, reject) => {
+      if (controller.signal.aborted) {
+        reject(new Error("Aborted"));
       }
-      const { value, errors } = await this.root.validateOnce({ signal: controller.signal });
-      if (!isValid(errors)) {
-        throw new Error(`Invalid: ${JSON.stringify(errors)}`); // more useful error?
-      }
-      await new Promise((resolve, reject) => {
-        controller.signal.addEventListener("abort", () => {
-          reject(new Error("Aborted"));
-        });
-        handler({ id, value, signal: controller.signal }).then(resolve, reject);
+      controller.signal.addEventListener("abort", () => {
+        reject(new Error("Aborted"));
       });
-    } finally {
+      (async () => {
+        const { value, errors } = await this.root.validateOnce({ signal: controller.signal });
+        if (!isValid(errors)) {
+          throw new Error(`Invalid: ${JSON.stringify(errors)}`); // more useful error?
+        }
+        await handler({ id, value, signal: controller.signal });
+      })().then(resolve, reject);
+    }).finally(() => {
       this.pendingRequestIds.delete(id);
       this.updateStateIsSubmitting();
-    }
+    });
   }
 
   reset(value?: T): void {

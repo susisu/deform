@@ -320,7 +320,7 @@ describe("FormImpl", () => {
       controller.abort();
       const promise = form.submit({ signal: controller.signal });
       expect(form.getState()).toEqual({
-        isSubmitting: false,
+        isSubmitting: true,
         submitCount: 1,
       });
 
