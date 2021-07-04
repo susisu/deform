@@ -2326,4 +2326,60 @@ describe("FieldArrayImpl", () => {
       ]);
     });
   });
+
+  describe("#insert", () => {
+    it("inserts a field at the specified index of the array", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42, 43],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 43] }));
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(2);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+      ]);
+
+      fieldArray.insert(1, 1);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1, 43] }));
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(3);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2[2].id).toBe(fields1[1].id);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 1, value: 1 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+      ]);
+
+      fields2[1].setValue(2);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 2, 43] }));
+      const fields3 = fieldArray.getFields();
+      expect(fields3).toHaveLength(3);
+      expect(fields3[0].id).toBe(fields2[0].id);
+      expect(fields3[1].id).toBe(fields2[1].id);
+      expect(fields3[2].id).toBe(fields2[2].id);
+      expect(fields3.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 1, value: 2 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+      ]);
+    });
+
+    it("throws error if the index is out of range", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(() => {
+        fieldArray.insert(-1, 1);
+      }).toThrowError("FieldArray '$root' failed to insert: index '-1' is out of range");
+      expect(() => {
+        fieldArray.insert(2, 1);
+      }).toThrowError("FieldArray '$root' failed to insert: index '2' is out of range");
+    });
+  });
 });

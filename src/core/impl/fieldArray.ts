@@ -145,7 +145,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.current = newValue;
     this.fields = prepend(this.fields, field);
     this.indexByKey = new Map([
-      ...[...this.indexByKey].map(([key, index]) => [key, index + 1] as const),
+      ...[...this.indexByKey].map(([key, i]) => [key, i + 1] as const),
       [key, 0],
     ]);
     this.keyByIndex = prepend(this.keyByIndex, key);
@@ -153,8 +153,23 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     field.connect();
   }
 
-  insert(_index: number, _value: T): void {
-    throw new Error("not implemented");
+  insert(index: number, value: T): void {
+    if (index < 0 || index > this.value.length) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to insert: index '${index}' is out of range`
+      );
+    }
+    const newValue = insert(this.value, index, value);
+    const [key, field] = this.createChild(value);
+    this.current = newValue;
+    this.fields = insert(this.fields, index, field);
+    this.indexByKey = new Map([
+      ...[...this.indexByKey].map(([key, i]) => [key, i >= index ? i + 1 : i] as const),
+      [key, index],
+    ]);
+    this.keyByIndex = insert(this.keyByIndex, index, key);
+    this.setValue(newValue);
+    field.connect();
   }
 
   remove(_index: number): void {
@@ -333,4 +348,8 @@ function append<T>(xs: readonly T[], x: T): readonly T[] {
 
 function prepend<T>(xs: readonly T[], x: T): readonly T[] {
   return [x, ...xs];
+}
+
+function insert<T>(xs: readonly T[], index: number, x: T): readonly T[] {
+  return [...xs.slice(0, index), x, ...xs.slice(index)];
 }
