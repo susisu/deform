@@ -243,8 +243,34 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
   }
 
-  swap(_aIndex: number, _bIndex: number): void {
-    throw new Error("not implemented");
+  swap(aIndex: number, bIndex: number): void {
+    if (aIndex < 0 || aIndex > this.value.length - 1) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to swap: index '${aIndex}' is out of range`
+      );
+    }
+    if (bIndex < 0 || bIndex > this.value.length - 1) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to swap: index '${bIndex}' is out of range`
+      );
+    }
+    if (aIndex === bIndex) {
+      return;
+    }
+
+    const newValue = swap(this.value, aIndex, bIndex);
+    const fields = swap(this.fields, aIndex, bIndex);
+    const keyByIndex = swap(this.keyByIndex, aIndex, bIndex);
+    const indexByKey = inverseMap(keyByIndex);
+
+    this.current = newValue;
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
+    this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
   }
 
   private createChild(value: T): [key: string, field: ChildFieldNode<T>] {
@@ -441,6 +467,28 @@ function move<T>(xs: readonly T[], fromIndex: number, toIndex: number): readonly
       xs[fromIndex],
       ...xs.slice(toIndex, fromIndex),
       ...xs.slice(fromIndex + 1),
+    ];
+  }
+}
+
+function swap<T>(xs: readonly T[], aIndex: number, bIndex: number): readonly T[] {
+  if (aIndex === bIndex) {
+    return xs;
+  } else if (aIndex < bIndex) {
+    return [
+      ...xs.slice(0, aIndex),
+      xs[bIndex],
+      ...xs.slice(aIndex + 1, bIndex),
+      xs[aIndex],
+      ...xs.slice(bIndex + 1),
+    ];
+  } else {
+    return [
+      ...xs.slice(0, bIndex),
+      xs[aIndex],
+      ...xs.slice(bIndex + 1, aIndex),
+      xs[bIndex],
+      ...xs.slice(aIndex + 1),
     ];
   }
 }
