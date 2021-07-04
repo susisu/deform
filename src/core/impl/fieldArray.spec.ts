@@ -2252,4 +2252,41 @@ describe("FieldArrayImpl", () => {
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [7] }));
     });
   });
+
+  describe("#append", () => {
+    it("appends a field at the last of the array", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(1);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+      ]);
+
+      fieldArray.append(1);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1] }));
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(2);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 1, value: 1 }),
+      ]);
+
+      fields2[1].setValue(2);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 2] }));
+      const fields3 = fieldArray.getFields();
+      expect(fields3).toHaveLength(2);
+      expect(fields3[0].id).toBe(fields2[0].id);
+      expect(fields3[1].id).toBe(fields2[1].id);
+      expect(fields3.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 1, value: 2 }),
+      ]);
+    });
+  });
 });
