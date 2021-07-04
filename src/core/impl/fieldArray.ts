@@ -213,8 +213,34 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
   }
 
-  move(_fromIndex: number, _toIndex: number): void {
-    throw new Error("not implemented");
+  move(fromIndex: number, toIndex: number): void {
+    if (fromIndex < 0 || fromIndex > this.value.length - 1) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to move: index '${fromIndex}' is out of range`
+      );
+    }
+    if (toIndex < 0 || toIndex > this.value.length - 1) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to move: index '${toIndex}' is out of range`
+      );
+    }
+    if (fromIndex === toIndex) {
+      return;
+    }
+
+    const newValue = move(this.value, fromIndex, toIndex);
+    const fields = move(this.fields, fromIndex, toIndex);
+    const keyByIndex = move(this.keyByIndex, fromIndex, toIndex);
+    const indexByKey = inverseMap(keyByIndex);
+
+    this.current = newValue;
+    this.fields = fields;
+    this.keyByIndex = keyByIndex;
+    this.indexByKey = indexByKey;
+    this.queueFieldsDispatch();
+
+    this.setValue(newValue);
+    this.setChildrenErrorsKeyMapper(createChildrenErrorsKeyMapper(indexByKey));
   }
 
   swap(_aIndex: number, _bIndex: number): void {
@@ -397,4 +423,24 @@ function insert<T>(xs: readonly T[], index: number, x: T): readonly T[] {
 
 function remove<T>(xs: readonly T[], index: number): readonly T[] {
   return [...xs.slice(0, index), ...xs.slice(index + 1)];
+}
+
+function move<T>(xs: readonly T[], fromIndex: number, toIndex: number): readonly T[] {
+  if (fromIndex === toIndex) {
+    return xs;
+  } else if (fromIndex < toIndex) {
+    return [
+      ...xs.slice(0, fromIndex),
+      ...xs.slice(fromIndex + 1, toIndex + 1),
+      xs[fromIndex],
+      ...xs.slice(toIndex + 1),
+    ];
+  } else {
+    return [
+      ...xs.slice(0, toIndex),
+      xs[fromIndex],
+      ...xs.slice(toIndex, fromIndex),
+      ...xs.slice(fromIndex + 1),
+    ];
+  }
 }
