@@ -129,19 +129,22 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   append(value: T): void {
-    const newValue = append(this.value, value);
     const [key, field] = this.createChild(value);
+
+    const newValue = append(this.value, value);
     this.current = newValue;
     this.fields = append(this.fields, field);
     this.indexByKey = new Map([...this.indexByKey, [key, newValue.length - 1]]);
     this.keyByIndex = append(this.keyByIndex, key);
     this.setValue(newValue);
+
     field.connect();
   }
 
   prepend(value: T): void {
-    const newValue = prepend(this.value, value);
     const [key, field] = this.createChild(value);
+
+    const newValue = prepend(this.value, value);
     this.current = newValue;
     this.fields = prepend(this.fields, field);
     this.indexByKey = new Map([
@@ -150,6 +153,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     ]);
     this.keyByIndex = prepend(this.keyByIndex, key);
     this.setValue(newValue);
+
     field.connect();
   }
 
@@ -159,8 +163,10 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
         `FieldArray '${this.path}' failed to insert: index '${index}' is out of range`
       );
     }
-    const newValue = insert(this.value, index, value);
+
     const [key, field] = this.createChild(value);
+
+    const newValue = insert(this.value, index, value);
     this.current = newValue;
     this.fields = insert(this.fields, index, field);
     this.indexByKey = new Map([
@@ -169,11 +175,30 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     ]);
     this.keyByIndex = insert(this.keyByIndex, index, key);
     this.setValue(newValue);
+
     field.connect();
   }
 
-  remove(_index: number): void {
-    throw new Error("not implemented");
+  remove(index: number): void {
+    if (index < 0 || index > this.value.length) {
+      throw new Error(
+        `FieldArray '${this.path}' failed to remove: index '${index}' is out of range`
+      );
+    }
+
+    const field = this.fields[index];
+    field.disconnect();
+
+    const newValue = remove(this.value, index);
+    this.current = newValue;
+    this.fields = remove(this.fields, index);
+    this.indexByKey = new Map(
+      [...this.indexByKey]
+        .filter(([_, i]) => i !== index)
+        .map(([key, i]) => [key, i > index ? i - 1 : i] as const)
+    );
+    this.keyByIndex = remove(this.keyByIndex, index);
+    this.setValue(newValue);
   }
 
   move(_fromIndex: number, _toIndex: number): void {
@@ -352,4 +377,8 @@ function prepend<T>(xs: readonly T[], x: T): readonly T[] {
 
 function insert<T>(xs: readonly T[], index: number, x: T): readonly T[] {
   return [...xs.slice(0, index), x, ...xs.slice(index)];
+}
+
+function remove<T>(xs: readonly T[], index: number): readonly T[] {
+  return [...xs.slice(0, index), ...xs.slice(index + 1)];
 }

@@ -2382,4 +2382,58 @@ describe("FieldArrayImpl", () => {
       }).toThrowError("FieldArray '$root' failed to insert: index '2' is out of range");
     });
   });
+
+  describe("#remove", () => {
+    it("removes a field at the specified index of the array", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42, 43, 44],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 43, 44] }));
+      const fields1 = fieldArray.getFields();
+      expect(fields1).toHaveLength(3);
+      expect(fields1.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+        expect.objectContaining({ defaultValue: 44, value: 44 }),
+      ]);
+
+      fieldArray.remove(1);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 44] }));
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(2);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2[1].id).toBe(fields1[2].id);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 44, value: 44 }),
+      ]);
+
+      fields2[1].setValue(1);
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42, 1] }));
+      const fields3 = fieldArray.getFields();
+      expect(fields3).toHaveLength(2);
+      expect(fields3[0].id).toBe(fields2[0].id);
+      expect(fields3[1].id).toBe(fields2[1].id);
+      expect(fields3.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 44, value: 1 }),
+      ]);
+    });
+
+    it("throws error if the index is out of range", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(() => {
+        fieldArray.remove(-1);
+      }).toThrowError("FieldArray '$root' failed to remove: index '-1' is out of range");
+      expect(() => {
+        fieldArray.remove(2);
+      }).toThrowError("FieldArray '$root' failed to remove: index '2' is out of range");
+    });
+  });
 });
