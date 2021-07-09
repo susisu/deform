@@ -13,7 +13,7 @@ import { uniqueId } from "./shared";
 
 export type FormImplParams<T> = Readonly<{
   defaultValue: T;
-  value?: T;
+  value?: T | undefined;
   handler: FormSubmitHandler<T>;
 }>;
 

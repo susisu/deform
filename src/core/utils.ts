@@ -5,7 +5,7 @@ import { FormImpl } from "./impl/form";
 
 export type FormParams<T> = Readonly<{
   defaultValue: T;
-  value?: T;
+  value?: T | undefined;
   handler: FormSubmitHandler<T>;
 }>;
 
@@ -18,9 +18,9 @@ export function createForm<T>(params: FormParams<T>): Form<T> {
 }
 
 export type FieldNodeParams<T> = Readonly<{
-  path?: string;
+  path?: string | undefined;
   defaultValue: T;
-  value?: T;
+  value?: T | undefined;
 }>;
 
 export function createFieldNode<T>(params: FieldNodeParams<T>): FieldNode<T> {
@@ -32,9 +32,9 @@ export function createFieldNode<T>(params: FieldNodeParams<T>): FieldNode<T> {
 }
 
 export type FieldArrayParams<T> = Readonly<{
-  path?: string;
+  path?: string | undefined;
   defaultValue: readonly T[];
-  value?: readonly T[];
+  value?: readonly T[] | undefined;
 }>;
 
 export function createFieldArray<T>(params: FieldArrayParams<T>): FieldArray<T> {

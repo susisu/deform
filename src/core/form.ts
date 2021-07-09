@@ -43,7 +43,7 @@ export type ValidationRequest<T> = Readonly<{
 }>;
 
 export type ValidateOnceOptions = Readonly<{
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 }>;
 
 export type ValidateOnceResult<T> = Readonly<{
@@ -130,7 +130,7 @@ export type FormState = Readonly<{
 export type FormStateSubscriber = (state: FormState) => void;
 
 export type FormSubmitOptions = Readonly<{
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 }>;
 
 export type FormSubmitHandler<T> = (req: FormSubmitRequest<T>) => Promise<void>;
