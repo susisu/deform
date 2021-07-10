@@ -29,8 +29,10 @@
   },
   "devDependencies": {
     "@susisu/eslint-config": "^0.0.37",
+    "@testing-library/react-hooks": "^7.0.1",
     "@types/jest": "^26.0.23",
     "@types/react": "^17.0.14",
+    "@types/react-dom": "^17.0.9",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-eslint-comments": "^3.2.0",
@@ -40,6 +42,7 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.1",
     "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.0.3",
     "typescript": "^4.3.4"
