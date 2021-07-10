@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChildArrayKeyOf,
   ChildKeyOf,
+  CreateFormParams,
   ElementType,
   Field,
   FieldArray,
   FieldNode,
   Form,
-  FormParams,
   FormState,
   Snapshot,
   createForm,
 } from "../core";
 
-export function useForm<T>(params: FormParams<T>): Form<T> {
+export function useForm<T>(params: CreateFormParams<T>): Form<T> {
   const handlerRef = useRef(params.handler);
   useEffect(() => {
     handlerRef.current = params.handler;
