@@ -7,10 +7,11 @@ import {
   FieldArray,
   FieldNode,
   Form,
+  FormParams,
   FormState,
   Snapshot,
-} from "../core/form";
-import { FormParams, createForm } from "../core/impl";
+  createForm,
+} from "../core";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
   const handlerRef = useRef(params.handler);
