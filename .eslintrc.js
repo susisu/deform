@@ -21,6 +21,7 @@ module.exports = {
         browser: true,
       },
       rules: {
+        "sort-imports": ["error", { ignoreDeclarationSort: true }],
         "eslint-comments/no-unused-disable": "error",
       },
     },

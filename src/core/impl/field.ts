@@ -2,13 +2,13 @@ import {
   Disposable,
   Errors,
   Field,
-  isEqualErrors,
-  isValid,
   Snapshot,
   Subscriber,
   ValidateOnceOptions,
   ValidateOnceResult,
   Validator,
+  isEqualErrors,
+  isValid,
 } from "../form";
 import { Child, Getter, KeyMapper, Parent, uniqueId } from "./shared";
 
