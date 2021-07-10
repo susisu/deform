@@ -115,3 +115,26 @@ export function useValidator<T>(field: Field<T>, key: string, validator: Validat
     return remove;
   }, [field, key]);
 }
+
+export type ValidationHook<T> = <U extends T>(
+  field: Field<U>,
+  enabled?: boolean,
+  key?: string
+) => void;
+
+export function createValidationHook<T>(
+  defaultKey: string,
+  validator: Validator<T>
+): ValidationHook<T> {
+  const useValidation: ValidationHook<T> = (field, enabled = true, key = defaultKey): void => {
+    useEffect(() => {
+      if (enabled) {
+        const remove = field.addValidator(key, validator);
+        return remove;
+      } else {
+        return () => {};
+      }
+    }, [field, enabled, key]);
+  };
+  return useValidation;
+}

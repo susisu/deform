@@ -7,6 +7,7 @@ import {
   createForm,
 } from "../core";
 import {
+  createValidationHook,
   useChild,
   useChildArray,
   useFields,
@@ -304,6 +305,140 @@ describe("useValidator", () => {
       isTouched: false,
       isDirty: false,
       errors: {},
+      isPending: false,
+    });
+  });
+});
+
+describe("createValidationHook", () => {
+  it("creates a hook that validates a a field", async () => {
+    const field = createField({
+      defaultValue: 0,
+      value: 42,
+    });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const useValidation = createValidationHook("foo", validator);
+    const t = renderHook(() => useValidation(field));
+    expect(validator).toHaveBeenCalledTimes(1);
+    const req = validator.mock.calls[0][0];
+    expect(req).toEqual(expect.objectContaining({ value: 42 }));
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: true,
+    });
+
+    req.resolve(true);
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: { foo: true },
+      isPending: false,
+    });
+
+    t.unmount();
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+  });
+
+  it("disables validation if enabled = false is set", async () => {
+    const field = createField({
+      defaultValue: 0,
+      value: 42,
+    });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const useValidation = createValidationHook("foo", validator);
+    const t = renderHook(({ enabled }) => useValidation(field, enabled), {
+      initialProps: { enabled: true },
+    });
+    expect(validator).toHaveBeenCalledTimes(1);
+    const req = validator.mock.calls[0][0];
+    expect(req).toEqual(expect.objectContaining({ value: 42 }));
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: true,
+    });
+
+    req.resolve(true);
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: { foo: true },
+      isPending: false,
+    });
+
+    t.rerender({ enabled: false });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+  });
+
+  it("can override the key associated with the validator", async () => {
+    const field = createField({
+      defaultValue: 0,
+      value: 42,
+    });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const useValidation = createValidationHook("foo", validator);
+    renderHook(() => useValidation(field, true, "bar"));
+    expect(validator).toHaveBeenCalledTimes(1);
+    const req = validator.mock.calls[0][0];
+    req.resolve(true);
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: { bar: true },
       isPending: false,
     });
   });
