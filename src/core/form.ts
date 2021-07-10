@@ -114,6 +114,7 @@ export interface ChildFieldArray<T> extends FieldArray<T>, ChildField {}
 export type FieldsSubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;
 
 export interface Form<T> {
+  readonly id: string;
   readonly root: FieldNode<T>;
   getState(): FormState;
   subscribe(subscriber: FormStateSubscriber): Disposable;

@@ -3,6 +3,28 @@ import { FormSubmitRequest, ValidationRequest } from "../form";
 import { FormImpl } from "./form";
 
 describe("FormImpl", () => {
+  describe("#id", () => {
+    it("starts with 'Form/'", () => {
+      const form = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        handler: async () => {},
+      });
+      expect(form.id).toMatch(/^Form\//);
+    });
+
+    it("is uniquely generated for each field", () => {
+      const form1 = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        handler: async () => {},
+      });
+      const form2 = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        handler: async () => {},
+      });
+      expect(form2.id).not.toBe(form1.id);
+    });
+  });
+
   describe("#root", () => {
     it("is a root field of the form", () => {
       const form = new FormImpl({

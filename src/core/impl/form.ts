@@ -18,6 +18,8 @@ export type FormImplParams<T> = Readonly<{
 }>;
 
 export class FormImpl<T> implements Form<T> {
+  readonly id: string;
+
   readonly root: FieldNode<T>;
 
   private handler: FormSubmitHandler<T>;
@@ -30,6 +32,8 @@ export class FormImpl<T> implements Form<T> {
   private isDispatchQueued: boolean;
 
   constructor(params: FormImplParams<T>) {
+    this.id = `Form/${uniqueId()}`;
+
     this.root = new FieldNodeImpl({
       path: "$root",
       defaultValue: params.defaultValue,
