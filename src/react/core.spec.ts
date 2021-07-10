@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react-hooks";
 import { createFieldArray, createFieldNode, createForm } from "../core/utils";
-import { useFieldSnapshot, useFields, useForm, useFormState } from "./core";
+import { useFields, useForm, useFormState, useSnapshot } from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
@@ -91,12 +91,12 @@ describe("useFormState", () => {
   });
 });
 
-describe("useFieldSnapshot", () => {
+describe("useSnapshot", () => {
   it("subscribes the snapshot of a field", async () => {
     const field = createFieldNode({
       defaultValue: 0,
     });
-    const t = renderHook(() => useFieldSnapshot(field));
+    const t = renderHook(() => useSnapshot(field));
     expect(t.result.current).toEqual({
       defaultValue: 0,
       value: 0,

@@ -34,7 +34,7 @@ export function useFormState<T>(form: Form<T>): FormState {
   return state;
 }
 
-export function useFieldSnapshot<T>(field: Field<T>): Snapshot<T> {
+export function useSnapshot<T>(field: Field<T>): Snapshot<T> {
   const [snapshot, setSnapshot] = useState(() => field.getSnapshot());
   useEffect(() => {
     setSnapshot(field.getSnapshot());
