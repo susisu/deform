@@ -1,4 +1,4 @@
-import { createFieldArray, createFieldNode, createForm } from "./utils";
+import { createField, createFieldArray, createFieldNode, createForm } from "./utils";
 
 describe("createForm", () => {
   it("creates a Form", async () => {
@@ -90,6 +90,32 @@ describe("createFieldArray", () => {
       isTouched: false,
       isDirty: false,
       errors: { 0: false, 1: false },
+      isPending: false,
+    });
+  });
+});
+
+describe("createField", () => {
+  it("creates a Field", () => {
+    const field = createField({ defaultValue: 0 });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 0,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+  });
+
+  it("can set an initial value", () => {
+    const field = createField({ defaultValue: 0, value: 1 });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 1,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
       isPending: false,
     });
   });

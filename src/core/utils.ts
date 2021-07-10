@@ -1,4 +1,4 @@
-import { FieldArray, FieldNode, Form, FormSubmitHandler } from "./form";
+import { Field, FieldArray, FieldNode, Form, FormSubmitHandler } from "./form";
 import { FieldArrayImpl } from "./impl/fieldArray";
 import { FieldNodeImpl } from "./impl/fieldNode";
 import { FormImpl } from "./impl/form";
@@ -43,4 +43,10 @@ export function createFieldArray<T>(params: FieldArrayParams<T>): FieldArray<T> 
     defaultValue: params.defaultValue,
     value: params.value !== undefined ? params.value : params.defaultValue,
   });
+}
+
+export type FieldParams<T> = FieldNodeParams<T>;
+
+export function createField<T>(params: FieldParams<T>): Field<T> {
+  return createFieldNode(params);
 }
