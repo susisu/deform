@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import { createFieldNode, createForm } from "../core/utils";
-import { useFieldSnapshot, useForm, useFormState } from "./core";
+import { createFieldArray, createFieldNode, createForm } from "../core/utils";
+import { useFieldSnapshot, useFields, useForm, useFormState } from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
@@ -117,5 +117,29 @@ describe("useFieldSnapshot", () => {
       errors: {},
       isPending: false,
     });
+  });
+});
+
+describe("useFields", () => {
+  it("subscribes the fields of a field array", async () => {
+    const fieldArray = createFieldArray({
+      defaultValue: [0, 1],
+    });
+    const t = renderHook(() => useFields(fieldArray));
+    expect(t.result.current).toHaveLength(2);
+    expect(t.result.current.map(field => field.getSnapshot())).toEqual([
+      expect.objectContaining({ defaultValue: 0, value: 0 }),
+      expect.objectContaining({ defaultValue: 1, value: 1 }),
+    ]);
+
+    await act(async () => {
+      fieldArray.append(2);
+    });
+    expect(t.result.current).toHaveLength(3);
+    expect(t.result.current.map(field => field.getSnapshot())).toEqual([
+      expect.objectContaining({ defaultValue: 0, value: 0 }),
+      expect.objectContaining({ defaultValue: 1, value: 1 }),
+      expect.objectContaining({ defaultValue: 2, value: 2 }),
+    ]);
   });
 });

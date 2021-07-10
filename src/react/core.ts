@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Field, Form, FormState, Snapshot } from "../core/form";
+import { Field, FieldArray, FieldNode, Form, FormState, Snapshot } from "../core/form";
 import { FormParams, createForm } from "../core/utils";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
@@ -44,4 +44,16 @@ export function useFieldSnapshot<T>(field: Field<T>): Snapshot<T> {
   }, [field]);
 
   return snapshot;
+}
+
+export function useFields<T>(fieldArray: FieldArray<T>): ReadonlyArray<FieldNode<T>> {
+  const [fields, setFields] = useState(() => fieldArray.getFields());
+  useEffect(() => {
+    setFields(fieldArray.getFields());
+    return fieldArray.subscribeFields(fields => {
+      setFields(fields);
+    });
+  }, [fieldArray]);
+
+  return fields;
 }
