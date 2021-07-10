@@ -1,9 +1,10 @@
-import { renderHook } from "@testing-library/react-hooks";
-import { useForm } from "./core";
+import { act, renderHook } from "@testing-library/react-hooks";
+import { createForm } from "../core/utils";
+import { useForm, useFormState } from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
-    const handler = jest.fn(() => Promise.resolve());
+    const handler = jest.fn(async () => {});
     const t = renderHook(useForm, {
       initialProps: {
         defaultValue: 0,
@@ -29,7 +30,7 @@ describe("useForm", () => {
       initialProps: {
         defaultValue: 0,
         value: 42,
-        handler: () => Promise.resolve(),
+        handler: async () => {},
       },
     });
     const form1 = t.result.current;
@@ -40,7 +41,7 @@ describe("useForm", () => {
   });
 
   it("follows the updates of the handler function", async () => {
-    const handler1 = jest.fn(() => Promise.resolve());
+    const handler1 = jest.fn(async () => {});
     const t = renderHook(useForm, {
       initialProps: {
         defaultValue: 0,
@@ -52,7 +53,7 @@ describe("useForm", () => {
       expect.objectContaining({ defaultValue: 0, value: 42 })
     );
 
-    const handler2 = jest.fn(() => Promise.resolve());
+    const handler2 = jest.fn(async () => {});
     t.rerender({
       defaultValue: 1,
       value: 43,
@@ -67,5 +68,25 @@ describe("useForm", () => {
     await t.result.current.submit();
     expect(handler1).not.toHaveBeenCalled();
     expect(handler2).toHaveBeenCalledWith(expect.objectContaining({ value: 42 }));
+  });
+});
+
+describe("useFormState", () => {
+  it("subscribes the state of a form", async () => {
+    const form = createForm({
+      defaultValue: 0,
+      handler: async () => {},
+    });
+    const t = renderHook(() => useFormState(form));
+    expect(t.result.current).toEqual({
+      isSubmitting: false,
+      submitCount: 0,
+    });
+
+    await act(() => form.submit());
+    expect(t.result.current).toEqual({
+      isSubmitting: false,
+      submitCount: 1,
+    });
   });
 });

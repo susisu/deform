@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Form } from "../core/form";
+import { Form, FormState } from "../core/form";
 import { FormParams, createForm } from "../core/utils";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
@@ -20,4 +20,16 @@ export function useForm<T>(params: FormParams<T>): Form<T> {
   );
 
   return form;
+}
+
+export function useFormState<T>(form: Form<T>): FormState {
+  const [state, setState] = useState(() => form.getState());
+  useEffect(() => {
+    setState(form.getState());
+    return form.subscribe(state => {
+      setState(state);
+    });
+  }, [form]);
+
+  return state;
 }
