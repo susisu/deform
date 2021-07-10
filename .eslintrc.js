@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = {
-  plugins: ["jest", "jest-formatting"],
+  plugins: ["import", "jest", "jest-formatting", "react", "react-hooks"],
   overrides: [
     // source files
     {
@@ -9,6 +9,9 @@ module.exports = {
       extends: [
         "@susisu/eslint-config/preset/ts-types",
         "plugin:eslint-comments/recommended",
+        "plugin:import/typescript",
+        "plugin:react/recommended",
+        "plugin:react-hooks/recommended",
         "prettier",
       ],
       parserOptions: {
@@ -20,9 +23,27 @@ module.exports = {
         es6: true,
         browser: true,
       },
+      settings: {
+        react: {
+          version: "detect",
+        },
+      },
       rules: {
         "sort-imports": ["error", { ignoreDeclarationSort: true }],
         "eslint-comments/no-unused-disable": "error",
+        "import/no-default-export": "error",
+        "import/no-useless-path-segments": ["error", { noUselessIndex: true }],
+        "import/order": ["error", { alphabetize: { order: "asc" } }],
+        "react/prop-types": "off",
+        "react/jsx-tag-spacing": [
+          "error",
+          {
+            closingSlash: "never",
+            beforeSelfClosing: "always",
+            afterOpening: "never",
+            beforeClosing: "never",
+          },
+        ],
       },
     },
     // test files
