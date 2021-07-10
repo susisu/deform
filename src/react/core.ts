@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, FormState } from "../core/form";
+import { Field, Form, FormState, Snapshot } from "../core/form";
 import { FormParams, createForm } from "../core/utils";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
@@ -32,4 +32,16 @@ export function useFormState<T>(form: Form<T>): FormState {
   }, [form]);
 
   return state;
+}
+
+export function useFieldSnapshot<T>(field: Field<T>): Snapshot<T> {
+  const [snapshot, setSnapshot] = useState(() => field.getSnapshot());
+  useEffect(() => {
+    setSnapshot(field.getSnapshot());
+    return field.subscribe(snapshot => {
+      setSnapshot(snapshot);
+    });
+  }, [field]);
+
+  return snapshot;
 }

@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import { createForm } from "../core/utils";
-import { useForm, useFormState } from "./core";
+import { createFieldNode, createForm } from "../core/utils";
+import { useFieldSnapshot, useForm, useFormState } from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
@@ -87,6 +87,35 @@ describe("useFormState", () => {
     expect(t.result.current).toEqual({
       isSubmitting: false,
       submitCount: 1,
+    });
+  });
+});
+
+describe("useFieldSnapshot", () => {
+  it("subscribes the snapshot of a field", async () => {
+    const field = createFieldNode({
+      defaultValue: 0,
+    });
+    const t = renderHook(() => useFieldSnapshot(field));
+    expect(t.result.current).toEqual({
+      defaultValue: 0,
+      value: 0,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    await act(async () => {
+      field.setValue(42);
+    });
+    expect(t.result.current).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
     });
   });
 });
