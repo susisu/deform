@@ -10,7 +10,7 @@ import {
   FormState,
   Snapshot,
 } from "../core/form";
-import { FormParams, createForm } from "../core/utils";
+import { FormParams, createForm } from "../core/impl";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
   const handlerRef = useRef(params.handler);

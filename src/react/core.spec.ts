@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import { createField, createFieldArray, createFieldNode, createForm } from "../core/utils";
+import { createField, createFieldArray, createFieldNode, createForm } from "../core/impl";
 import { useChild, useChildArray, useFields, useForm, useFormState, useSnapshot } from "./core";
 
 describe("useForm", () => {

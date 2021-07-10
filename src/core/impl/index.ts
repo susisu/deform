@@ -1,7 +1,7 @@
-import { Field, FieldArray, FieldNode, Form, FormSubmitHandler } from "./form";
-import { FieldArrayImpl } from "./impl/fieldArray";
-import { FieldNodeImpl } from "./impl/fieldNode";
-import { FormImpl } from "./impl/form";
+import { Field, FieldArray, FieldNode, Form, FormSubmitHandler } from "../form";
+import { FieldArrayImpl } from "./fieldArray";
+import { FieldNodeImpl } from "./fieldNode";
+import { FormImpl } from "./form";
 
 export type FormParams<T> = Readonly<{
   defaultValue: T;
