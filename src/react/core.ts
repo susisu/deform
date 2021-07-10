@@ -101,19 +101,28 @@ export function useFields<T>(fieldArray: FieldArray<T>): ReadonlyArray<FieldNode
   return fields;
 }
 
-export function useValidator<T>(field: Field<T>, key: string, validator: Validator<T>): void {
+export function useValidator<T>(
+  field: Field<T>,
+  key: string,
+  validator: Validator<T>,
+  enabled: boolean = true
+): void {
   const validatorRef = useRef(validator);
   useEffect(() => {
     validatorRef.current = validator;
   }, [validator]);
 
   useEffect(() => {
-    const remove = field.addValidator(key, req => {
-      const validator = validatorRef.current;
-      validator(req);
-    });
-    return remove;
-  }, [field, key]);
+    if (enabled) {
+      const remove = field.addValidator(key, req => {
+        const validator = validatorRef.current;
+        validator(req);
+      });
+      return remove;
+    } else {
+      return () => {};
+    }
+  }, [field, key, enabled]);
 }
 
 export type ValidationHook<T> = <U extends T>(

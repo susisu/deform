@@ -308,6 +308,47 @@ describe("useValidator", () => {
       isPending: false,
     });
   });
+
+  it("disables validation if enabled = false is set", async () => {
+    const field = createField({
+      defaultValue: 0,
+      value: 42,
+    });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const t = renderHook(({ enabled }) => useValidator(field, "foo", validator, enabled), {
+      initialProps: { enabled: true },
+    });
+    expect(validator).toHaveBeenCalledTimes(1);
+    const req = validator.mock.calls[0][0];
+    req.resolve(true);
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: { foo: true },
+      isPending: false,
+    });
+
+    t.rerender({ enabled: false });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+  });
 });
 
 describe("createValidationHook", () => {
@@ -382,16 +423,6 @@ describe("createValidationHook", () => {
     });
     expect(validator).toHaveBeenCalledTimes(1);
     const req = validator.mock.calls[0][0];
-    expect(req).toEqual(expect.objectContaining({ value: 42 }));
-    expect(field.getSnapshot()).toEqual({
-      defaultValue: 0,
-      value: 42,
-      isTouched: false,
-      isDirty: false,
-      errors: {},
-      isPending: true,
-    });
-
     req.resolve(true);
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
