@@ -117,6 +117,71 @@ describe("FieldNodeImpl", () => {
     });
   });
 
+  describe("#flushDispatchQueue", () => {
+    it("immediately dispatches the snapshot updates to the subscribers", async () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setValue(1);
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      field.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches updates after flushing automatically", async () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      field.setValue(1);
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      field.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
+
+      field.setValue(2);
+      expect(subscriber).toHaveBeenCalledTimes(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
+    });
+
+    it("does nothing if there are no updates", async () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const subscriber = jest.fn(() => {});
+      field.subscribe(subscriber);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      field.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+    });
+  });
+
   describe("#setDefaultValue", () => {
     it("sets the default value of the field", async () => {
       const field = new FieldNodeImpl({

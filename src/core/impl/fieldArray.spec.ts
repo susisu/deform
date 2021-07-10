@@ -121,6 +121,71 @@ describe("FieldArrayImpl", () => {
     });
   });
 
+  describe("#flushDispatchQueue", () => {
+    it("immediately dispatches the snapshot updates to the subscribers", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setValue([1]);
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1] }));
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches updates after flushing automatically", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setValue([1]);
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1] }));
+
+      fieldArray.setValue([2]);
+      expect(subscriber).toHaveBeenCalledTimes(1);
+
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [2] }));
+    });
+
+    it("does nothing if there are no updates", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      fieldArray.flushDispatchQueue();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+    });
+  });
+
   describe("#getFields", () => {
     it("gets the latest snapshot of the child fields", () => {
       const fieldArray = new FieldArrayImpl({

@@ -7,6 +7,7 @@ export interface Field<T> {
   getSnapshot(): Snapshot<T>;
   subscribe(subscriber: Subscriber<T>): Disposable;
   unsubscribe(subscriber: Subscriber<T>): void;
+  flushDispatchQueue(): void;
   setDefaultValue(value: T): void;
   setValue(value: T): void;
   setTouched(): void;

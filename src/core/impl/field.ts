@@ -150,10 +150,14 @@ export abstract class FieldImpl<T> implements Field<T> {
       return;
     }
     this.isDispatchQueued = true;
-
     window.queueMicrotask(() => {
-      this.isDispatchQueued = false;
+      this.flushDispatchQueue();
+    });
+  }
 
+  flushDispatchQueue(): void {
+    if (this.isDispatchQueued) {
+      this.isDispatchQueued = false;
       const snapshot = this.snapshot;
       for (const subscriber of [...this.subscribers]) {
         try {
@@ -163,7 +167,7 @@ export abstract class FieldImpl<T> implements Field<T> {
           console.error(err);
         }
       }
-    });
+    }
   }
 
   private updateSnapshotDefaultValue(): void {
