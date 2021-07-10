@@ -10,6 +10,7 @@ import {
   Form,
   FormState,
   Snapshot,
+  Validator,
   createForm,
 } from "../core";
 
@@ -98,4 +99,19 @@ export function useFields<T>(fieldArray: FieldArray<T>): ReadonlyArray<FieldNode
   }, [fieldArray]);
 
   return fields;
+}
+
+export function useValidator<T>(field: Field<T>, key: string, validator: Validator<T>): void {
+  const validatorRef = useRef(validator);
+  useEffect(() => {
+    validatorRef.current = validator;
+  }, [validator]);
+
+  useEffect(() => {
+    const remove = field.addValidator(key, req => {
+      const validator = validatorRef.current;
+      validator(req);
+    });
+    return remove;
+  }, [field, key]);
 }

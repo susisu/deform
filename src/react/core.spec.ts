@@ -1,6 +1,20 @@
 import { act, renderHook } from "@testing-library/react-hooks";
-import { createField, createFieldArray, createFieldNode, createForm } from "../core";
-import { useChild, useChildArray, useFields, useForm, useFormState, useSnapshot } from "./core";
+import {
+  ValidationRequest,
+  createField,
+  createFieldArray,
+  createFieldNode,
+  createForm,
+} from "../core";
+import {
+  useChild,
+  useChildArray,
+  useFields,
+  useForm,
+  useFormState,
+  useSnapshot,
+  useValidator,
+} from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
@@ -241,5 +255,56 @@ describe("useFields", () => {
       expect.objectContaining({ defaultValue: 1, value: 1 }),
       expect.objectContaining({ defaultValue: 2, value: 2 }),
     ]);
+  });
+});
+
+describe("useValidator", () => {
+  it("attaches a validator to a field", async () => {
+    const field = createField({
+      defaultValue: 0,
+      value: 42,
+    });
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const t = renderHook(() => useValidator(field, "foo", validator));
+    expect(validator).toHaveBeenCalledTimes(1);
+    const req = validator.mock.calls[0][0];
+    expect(req).toEqual(expect.objectContaining({ value: 42 }));
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: true,
+    });
+
+    req.resolve(true);
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: { foo: true },
+      isPending: false,
+    });
+
+    t.unmount();
+    expect(field.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
   });
 });
