@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { ChildKeyOf, Field, FieldArray, FieldNode, Form, FormState, Snapshot } from "../core/form";
+import {
+  ChildArrayKeyOf,
+  ChildKeyOf,
+  ElementType,
+  Field,
+  FieldArray,
+  FieldNode,
+  Form,
+  FormState,
+  Snapshot,
+} from "../core/form";
 import { FormParams, createForm } from "../core/utils";
 
 export function useForm<T>(params: FormParams<T>): Form<T> {
@@ -31,6 +41,20 @@ export function useChild<T, K extends ChildKeyOf<T>>(field: FieldNode<T>, key: K
   }, []);
 
   return child;
+}
+
+export function useChildArray<T, K extends ChildArrayKeyOf<T>>(
+  field: FieldNode<T>,
+  key: K
+): FieldArray<ElementType<T[K]>> {
+  const [childArray] = useState(() => field.createChildArray(key));
+
+  useEffect(() => {
+    const disconnect = childArray.connect();
+    return disconnect;
+  }, []);
+
+  return childArray;
 }
 
 export function useFormState<T>(form: Form<T>): FormState {
