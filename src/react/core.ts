@@ -107,20 +107,12 @@ export function useValidator<T>(
   validator: Validator<T>,
   enabled: boolean = true
 ): void {
-  const validatorRef = useRef(validator);
-  useEffect(() => {
-    validatorRef.current = validator;
-  }, [validator]);
-
   useEffect(() => {
     if (enabled) {
-      const remove = field.addValidator(key, req => {
-        const validator = validatorRef.current;
-        validator(req);
-      });
+      const remove = field.addValidator(key, validator);
       return remove;
     } else {
       return () => {};
     }
-  }, [field, key, enabled]);
+  }, [field, key, validator, enabled]);
 }
