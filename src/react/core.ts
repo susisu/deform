@@ -38,7 +38,7 @@ export function useChild<T, K extends ChildKeyOf<T>>(field: FieldNode<T>, key: K
   useEffect(() => {
     const disconnect = child.connect();
     return disconnect;
-  }, []);
+  }, [child]);
 
   return child;
 }
@@ -52,7 +52,7 @@ export function useChildArray<T, K extends ChildArrayKeyOf<T>>(
   useEffect(() => {
     const disconnect = childArray.connect();
     return disconnect;
-  }, []);
+  }, [childArray]);
 
   return childArray;
 }
