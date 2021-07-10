@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react-hooks";
 import { createFieldArray, createFieldNode, createForm } from "../core/utils";
-import { useFields, useForm, useFormState, useSnapshot } from "./core";
+import { useChild, useFields, useForm, useFormState, useSnapshot } from "./core";
 
 describe("useForm", () => {
   it("creates a new form", async () => {
@@ -68,6 +68,56 @@ describe("useForm", () => {
     await t.result.current.submit();
     expect(handler1).not.toHaveBeenCalled();
     expect(handler2).toHaveBeenCalledWith(expect.objectContaining({ value: 42 }));
+  });
+});
+
+describe("useChild", () => {
+  it("creates a new child field", async () => {
+    const field = createFieldNode({
+      defaultValue: { x: 0, y: 1 },
+      value: { x: 42, y: 43 },
+    });
+    const t = renderHook(() => useChild(field, "x"));
+    expect(t.result.current.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 42,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+
+    await act(async () => {
+      t.result.current.setValue(2);
+    });
+    expect(t.result.current.getSnapshot()).toEqual({
+      defaultValue: 0,
+      value: 2,
+      isTouched: false,
+      isDirty: false,
+      errors: {},
+      isPending: false,
+    });
+    // connected to the parent
+    expect(field.getSnapshot()).toEqual(
+      expect.objectContaining({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 2, y: 43 },
+      })
+    );
+  });
+
+  it("returns the same field for every render", () => {
+    const field = createFieldNode({
+      defaultValue: { x: 0, y: 1 },
+      value: { x: 42, y: 43 },
+    });
+    const t = renderHook(() => useChild(field, "x"));
+    const field1 = t.result.current;
+
+    t.rerender();
+    const field2 = t.result.current;
+    expect(field2.id).toBe(field1.id);
   });
 });
 
