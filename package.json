@@ -24,9 +24,13 @@
     "clean:rm": "rimraf lib",
     "prepublishOnly": "run-s clean lint test build"
   },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0"
+  },
   "devDependencies": {
     "@susisu/eslint-config": "^0.0.37",
     "@types/jest": "^26.0.23",
+    "@types/react": "^17.0.14",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-eslint-comments": "^3.2.0",
@@ -35,6 +39,7 @@
     "jest": "^27.0.4",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.1",
+    "react": "^17.0.2",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.0.3",
     "typescript": "^4.3.4"
