@@ -25,7 +25,7 @@
     "prepublishOnly": "run-s clean lint test build"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0"
+    "react": "^16.14.0 || ^17.0.0"
   },
   "devDependencies": {
     "@susisu/eslint-config": "^0.0.37",
