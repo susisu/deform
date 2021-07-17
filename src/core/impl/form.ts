@@ -1,4 +1,4 @@
-import { Disposable, FieldNode, isValid } from "../field";
+import { Disposable, FieldNode } from "../field";
 import {
   Form,
   FormState,
@@ -127,7 +127,6 @@ export class FormImpl<T> implements Form<T> {
       });
     }
 
-    const handler = this.handler;
     const id = `FormSubmitRequest/${uniqueId()}`;
     this.pendingRequestIds.add(id);
     this.updateStateIsSubmitting();
@@ -137,20 +136,22 @@ export class FormImpl<T> implements Form<T> {
     return new Promise<void>((resolve, reject) => {
       if (controller.signal.aborted) {
         reject(new Error("Aborted"));
+        return;
       }
       controller.signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));
       });
-      (async () => {
-        const { value, errors } = await this.root.validateOnce({ signal: controller.signal });
-        if (!isValid(errors)) {
-          throw new Error(`Invalid: ${JSON.stringify(errors)}`); // more useful error?
+      const handler = this.handler;
+      const { value } = this.root.getSnapshot();
+      handler({ id, value, signal: controller.signal }).then(
+        () => {
+          resolve();
+        },
+        (err: unknown) => {
+          reject(err);
+          controller.abort();
         }
-        await handler({ id, value, signal: controller.signal });
-      })().then(resolve, (err: unknown) => {
-        reject(err);
-        controller.abort();
-      });
+      );
     }).finally(() => {
       this.pendingRequestIds.delete(id);
       this.updateStateIsSubmitting();

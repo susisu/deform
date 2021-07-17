@@ -1,5 +1,4 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
-import { ValidationRequest } from "../field";
 import { FormSubmitRequest } from "../form";
 import { FormImpl } from "./form";
 
@@ -144,7 +143,7 @@ describe("FormImpl", () => {
   });
 
   describe("#submit", () => {
-    it("validates and submits the form using the handler", async () => {
+    it("submits the form using the handler", async () => {
       const resolves: Array<() => void> = [];
       const handler = jest.fn(
         (_: FormSubmitRequest<{ x: number; y: number }>) =>
@@ -157,17 +156,6 @@ describe("FormImpl", () => {
         value: { x: 42, y: 43 },
         handler,
       });
-      const validator = jest.fn((_: ValidationRequest<{ x: number; y: number }>) => {});
-      form.root.addValidator("foo", validator);
-      expect(validator).toHaveBeenCalledTimes(1);
-      const vRequest1 = validator.mock.calls[0][0];
-      expect(vRequest1).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: { x: 42, y: 43 },
-        })
-      );
-      vRequest1.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
@@ -181,38 +169,18 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(handler).toHaveBeenCalledTimes(1);
+      const request = handler.mock.calls[0][0];
+      expect(request).toEqual({
+        id: expect.stringMatching(/^FormSubmitRequest\//),
+        value: { x: 42, y: 43 },
+        signal: expect.any(window.AbortSignal),
+      });
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
       expect(subscriber).toHaveBeenLastCalledWith({
-        isSubmitting: true,
-        submitCount: 1,
-      });
-
-      // validation phase
-      expect(validator).toHaveBeenCalledTimes(2);
-      const vRequest2 = validator.mock.calls[1][0];
-      expect(vRequest2).toEqual(
-        expect.objectContaining({
-          onetime: true,
-          value: { x: 42, y: 43 },
-        })
-      );
-      expect(handler).toHaveBeenCalledTimes(0);
-
-      // submit phase
-      vRequest2.resolve(false);
-      expect(handler).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
-      expect(handler).toHaveBeenCalledTimes(1);
-      const sRequest = handler.mock.calls[0][0];
-      expect(sRequest).toEqual({
-        id: expect.stringMatching(/^FormSubmitRequest\//),
-        value: { x: 42, y: 43 },
-        signal: expect.any(window.AbortSignal),
-      });
-      expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
@@ -225,54 +193,6 @@ describe("FormImpl", () => {
       });
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith({
-        isSubmitting: false,
-        submitCount: 1,
-      });
-    });
-
-    it("fails if there are validation errors", async () => {
-      const handler = jest.fn(async () => {});
-      const form = new FormImpl({
-        defaultValue: { x: 0, y: 1 },
-        value: { x: 42, y: 43 },
-        handler,
-      });
-      const validator = jest.fn((_: ValidationRequest<{ x: number; y: number }>) => {});
-      form.root.addValidator("foo", validator);
-      expect(validator).toHaveBeenCalledTimes(1);
-      const vRequest1 = validator.mock.calls[0][0];
-      expect(vRequest1).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: { x: 42, y: 43 },
-        })
-      );
-      vRequest1.resolve(true);
-      expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 0,
-      });
-
-      const promise = form.submit();
-      expect(form.getState()).toEqual({
-        isSubmitting: true,
-        submitCount: 1,
-      });
-
-      expect(validator).toHaveBeenCalledTimes(2);
-      const vRequest2 = validator.mock.calls[1][0];
-      expect(vRequest2).toEqual(
-        expect.objectContaining({
-          onetime: true,
-          value: { x: 42, y: 43 },
-        })
-      );
-      expect(handler).toHaveBeenCalledTimes(0);
-
-      vRequest2.resolve(true);
-      await expect(promise).rejects.toThrowError('Invalid: {"foo":true}');
-      expect(handler).toHaveBeenCalledTimes(0);
-      expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
       });
@@ -301,12 +221,9 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
-
-      expect(handler).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
       expect(handler).toHaveBeenCalledTimes(1);
-      const sRequest = handler.mock.calls[0][0];
-      expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      const request = handler.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
 
       rejects[0](new Error("test error"));
       await expect(promise).rejects.toThrowError("test error");
@@ -323,17 +240,6 @@ describe("FormImpl", () => {
         value: { x: 42, y: 43 },
         handler,
       });
-      const validator = jest.fn((_: ValidationRequest<{ x: number; y: number }>) => {});
-      form.root.addValidator("foo", validator);
-      expect(validator).toHaveBeenCalledTimes(1);
-      const vRequest = validator.mock.calls[0][0];
-      expect(vRequest).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: { x: 42, y: 43 },
-        })
-      );
-      vRequest.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
@@ -348,7 +254,6 @@ describe("FormImpl", () => {
       });
 
       await expect(promise).rejects.toThrowError("Aborted");
-      expect(validator).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
@@ -365,17 +270,6 @@ describe("FormImpl", () => {
         value: { x: 42, y: 43 },
         handler,
       });
-      const validator = jest.fn((_: ValidationRequest<{ x: number; y: number }>) => {});
-      form.root.addValidator("foo", validator);
-      expect(validator).toHaveBeenCalledTimes(1);
-      const vRequest1 = validator.mock.calls[0][0];
-      expect(vRequest1).toEqual(
-        expect.objectContaining({
-          onetime: false,
-          value: { x: 42, y: 43 },
-        })
-      );
-      vRequest1.resolve(false);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
@@ -387,32 +281,16 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
-
-      // validation phase
-      expect(validator).toHaveBeenCalledTimes(2);
-      const vRequest2 = validator.mock.calls[1][0];
-      expect(vRequest2).toEqual(
-        expect.objectContaining({
-          onetime: true,
-          value: { x: 42, y: 43 },
-        })
-      );
-      expect(handler).toHaveBeenCalledTimes(0);
-
-      // submit phase
-      vRequest2.resolve(false);
-      expect(handler).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
       expect(handler).toHaveBeenCalledTimes(1);
-      const sRequest = handler.mock.calls[0][0];
-      expect(sRequest).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      const request = handler.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
 
       const onAbort = jest.fn(() => {});
-      sRequest.signal.addEventListener("abort", onAbort);
+      request.signal.addEventListener("abort", onAbort);
 
       controller.abort();
       expect(onAbort).toHaveBeenCalled();
@@ -443,22 +321,18 @@ describe("FormImpl", () => {
       });
 
       const promise1 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
       expect(handler).toHaveBeenCalledTimes(1);
-      const sRequest1 = handler.mock.calls[0][0];
-      expect(sRequest1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      const request1 = handler.mock.calls[0][0];
+      expect(request1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
 
       const promise2 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(handler).toHaveBeenCalledTimes(2);
-      const sRequest2 = handler.mock.calls[1][0];
-      expect(sRequest2).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      const request2 = handler.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 2,
