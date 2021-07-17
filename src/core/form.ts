@@ -31,7 +31,7 @@ export type Snapshot<T> = Readonly<{
 
 export type Subscriber<T> = (snapshot: Snapshot<T>) => void;
 
-export type Errors = Readonly<{ [key: string]: unknown }>;
+export type Errors = Readonly<{ [key in PropertyKey]: unknown }>;
 
 export type Validator<T> = (req: ValidationRequest<T>) => void;
 
