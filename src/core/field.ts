@@ -113,32 +113,3 @@ export interface FieldArray<T> extends Field<readonly T[]> {
 export interface ChildFieldArray<T> extends FieldArray<T>, ChildField {}
 
 export type FieldsSubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;
-
-export interface Form<T> {
-  readonly id: string;
-  readonly root: FieldNode<T>;
-  getState(): FormState;
-  subscribe(subscriber: FormStateSubscriber): Disposable;
-  unsubscribe(subscriber: FormStateSubscriber): void;
-  submit(options?: FormSubmitOptions): Promise<void>;
-  reset(value?: T): void;
-}
-
-export type FormState = Readonly<{
-  isSubmitting: boolean;
-  submitCount: number;
-}>;
-
-export type FormStateSubscriber = (state: FormState) => void;
-
-export type FormSubmitOptions = Readonly<{
-  signal?: AbortSignal | undefined;
-}>;
-
-export type FormSubmitHandler<T> = (req: FormSubmitRequest<T>) => Promise<void>;
-
-export type FormSubmitRequest<T> = Readonly<{
-  id: string;
-  value: T;
-  signal: AbortSignal;
-}>;

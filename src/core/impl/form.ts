@@ -1,13 +1,11 @@
+import { Disposable, FieldNode, isValid } from "../field";
 import {
-  Disposable,
-  FieldNode,
   Form,
   FormState,
   FormStateSubscriber,
   FormSubmitHandler,
   FormSubmitOptions,
-  isValid,
-} from "../field";
+} from "../form";
 import { FieldNodeImpl } from "./fieldNode";
 import { uniqueId } from "./shared";
 

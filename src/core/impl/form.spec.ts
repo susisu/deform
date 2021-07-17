@@ -1,5 +1,6 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
-import { FormSubmitRequest, ValidationRequest } from "../field";
+import { ValidationRequest } from "../field";
+import { FormSubmitRequest } from "../form";
 import { FormImpl } from "./form";
 
 describe("FormImpl", () => {
