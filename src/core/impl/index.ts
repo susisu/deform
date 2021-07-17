@@ -1,4 +1,4 @@
-import { Field, FieldArray, FieldNode, Form, FormSubmitHandler } from "../form";
+import { Field, FieldArray, FieldNode, Form, FormSubmitHandler } from "../field";
 import { FieldArrayImpl } from "./fieldArray";
 import { FieldNodeImpl } from "./fieldNode";
 import { FormImpl } from "./form";

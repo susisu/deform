@@ -6,7 +6,7 @@ import {
   FieldNode,
   FieldsSubscriber,
   isValid,
-} from "../form";
+} from "../field";
 import { FieldImpl } from "./field";
 import { FieldNodeImpl } from "./fieldNode";
 import { Child, Getter, KeyMapper, Parent, Setter, uniqueId } from "./shared";

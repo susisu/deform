@@ -9,7 +9,7 @@ import {
   Validator,
   isEqualErrors,
   isValid,
-} from "../form";
+} from "../field";
 import { Child, Getter, KeyMapper, Parent, uniqueId } from "./shared";
 
 export type FieldImplParams<T> = Readonly<{

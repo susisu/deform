@@ -6,7 +6,7 @@ import {
   ElementType,
   Errors,
   isValid,
-} from "../form";
+} from "../field";
 import { FieldImpl } from "./field";
 import { FieldArrayImpl } from "./fieldArray";
 import { Child, Getter, KeyMapper, Parent, Setter } from "./shared";

@@ -1,4 +1,4 @@
-import { Errors } from "../form";
+import { Errors } from "../field";
 
 export const uniqueId = (() => {
   let uniqueIdCounter = 0;

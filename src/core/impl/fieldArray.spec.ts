@@ -1,5 +1,5 @@
 import { waitForMicrotasks } from "../../__tests__/utils";
-import { FieldNode, ValidationRequest, Validator } from "../form";
+import { FieldNode, ValidationRequest, Validator } from "../field";
 import { FieldArrayImpl } from "./fieldArray";
 import { FieldNodeImpl } from "./fieldNode";
 

@@ -7,7 +7,7 @@ import {
   FormSubmitHandler,
   FormSubmitOptions,
   isValid,
-} from "../form";
+} from "../field";
 import { FieldNodeImpl } from "./fieldNode";
 import { uniqueId } from "./shared";
 
