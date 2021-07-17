@@ -410,22 +410,23 @@ export abstract class FieldImpl<T> implements Field<T> {
   }
 
   private async runValidatorOnce(key: string, value: T, signal: AbortSignal): Promise<unknown> {
-    if (signal.aborted) {
-      // NEVER COMES HERE
-      throw new Error("Aborted");
-    }
-
     const validator = this.validators.get(key);
     if (!validator) {
       // NEVER COMES HERE
       return undefined;
     }
 
+    const requestId = `ValidationRequest/${uniqueId()}`;
+
     return new Promise<unknown>((resolve, reject) => {
+      if (signal.aborted) {
+        // NEVER COMES HERE
+        reject(new Error("Aborted"));
+        return;
+      }
       signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));
       });
-      const requestId = `ValidationRequest/${uniqueId()}`;
       validator({
         id: requestId,
         onetime: true,
@@ -468,6 +469,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     return new Promise<ValidateOnceResult<T>>((resolve, reject) => {
       if (controller.signal.aborted) {
         reject(new Error("Aborted"));
+        return;
       }
       controller.signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));

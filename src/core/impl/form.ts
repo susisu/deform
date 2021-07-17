@@ -128,6 +128,9 @@ export class FormImpl<T> implements Form<T> {
     }
 
     const id = `FormSubmitRequest/${uniqueId()}`;
+    const { value } = this.root.getSnapshot();
+    const handler = this.handler;
+
     this.pendingRequestIds.add(id);
     this.updateStateIsSubmitting();
     this.submitCount += 1;
@@ -141,8 +144,6 @@ export class FormImpl<T> implements Form<T> {
       controller.signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));
       });
-      const handler = this.handler;
-      const { value } = this.root.getSnapshot();
       handler({ id, value, signal: controller.signal }).then(
         () => {
           resolve();
