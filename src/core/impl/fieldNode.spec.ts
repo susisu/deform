@@ -1218,7 +1218,7 @@ describe("FieldNodeImpl", () => {
   });
 
   describe("#validateOnce", () => {
-    it("runs attached validators and returns the value and errors", async () => {
+    it("runs attached validators and returns the errors", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -1261,22 +1261,12 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      field.setValue(1);
-      expect(validator).toHaveBeenCalledTimes(3);
-      expect(field.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: true }, isPending: true })
-      );
-
       request2.resolve(false);
       expect(field.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: true }, isPending: true })
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
 
-      // the value at the time when 'validateOnce' is called is used
-      await expect(promise).resolves.toEqual({
-        value: 42,
-        errors: { foo: false },
-      });
+      await expect(promise).resolves.toEqual({ foo: false });
     });
 
     it("includes custom errors in the result", async () => {
@@ -1326,10 +1316,7 @@ describe("FieldNodeImpl", () => {
 
       // the custom errors at the time when 'validateOnce' is called is used
       // custom errors override validation errors
-      await expect(promise).resolves.toEqual({
-        value: 42,
-        errors: { foo: true, bar: true },
-      });
+      await expect(promise).resolves.toEqual({ foo: true, bar: true });
     });
 
     it("is aborted when the signal is aborted", async () => {
@@ -1403,7 +1390,7 @@ describe("FieldNodeImpl", () => {
       await expect(promise).rejects.toThrowError("Aborted");
     });
 
-    it("runs validators attached to the children with a given value and returns the errors", async () => {
+    it("runs validators attached to the children and returns the errors", async () => {
       const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
@@ -1460,28 +1447,15 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      parent.setValue({ x: 2, y: 3 });
-      expect(validator).toHaveBeenCalledTimes(3);
-      expect(parent.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { x: true }, isPending: true })
-      );
-      expect(child.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: {} }, isPending: true })
-      );
-
       request2.resolve(null);
       expect(parent.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { x: true }, isPending: true })
+        expect.objectContaining({ errors: { x: true }, isPending: false })
       );
       expect(child.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { foo: {} }, isPending: true })
+        expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      // the value at the time when 'validateOnce' is called is used
-      await expect(promise).resolves.toEqual({
-        value: { x: 42, y: 43 },
-        errors: { x: false },
-      });
+      await expect(promise).resolves.toEqual({ x: false });
     });
   });
 

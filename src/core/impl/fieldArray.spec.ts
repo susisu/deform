@@ -1660,7 +1660,7 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#validateOnce", () => {
-    it("runs attached validators and returns the value and errors", async () => {
+    it("runs attached validators and returns the errors", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -1705,22 +1705,12 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
 
-      fieldArray.setValue([1, 2]);
-      expect(validator).toHaveBeenCalledTimes(3);
-      expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { 0: false, 1: false, foo: true }, isPending: true })
-      );
-
       request2.resolve(false);
       expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { 0: false, 1: false, foo: true }, isPending: true })
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
 
-      // the value at the time when 'validateOnce' is called is used
-      await expect(promise).resolves.toEqual({
-        value: [42],
-        errors: { 0: false, foo: false },
-      });
+      await expect(promise).resolves.toEqual({ 0: false, foo: false });
     });
 
     it("includes custom errors in the result", async () => {
@@ -1772,10 +1762,7 @@ describe("FieldArrayImpl", () => {
 
       // the custom errors at the time when 'validateOnce' is called is used
       // custom errors override validation errors
-      await expect(promise).resolves.toEqual({
-        value: [42],
-        errors: { 0: false, foo: true, bar: true },
-      });
+      await expect(promise).resolves.toEqual({ 0: false, foo: true, bar: true });
     });
 
     it("is aborted when the signal is aborted", async () => {
@@ -1853,7 +1840,7 @@ describe("FieldArrayImpl", () => {
       await expect(promise).rejects.toThrowError("Aborted");
     });
 
-    it("runs validators attached to the children with a given value and returns the errors", async () => {
+    it("runs validators attached to the children and returns the errors", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -1911,22 +1898,12 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
-      fieldArray.setValue([1, 2]);
-      expect(validator).toHaveBeenCalledTimes(2);
-      expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: false })
-      );
-
       request2.resolve(null);
       expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ errors: { 0: false, 1: false }, isPending: false })
+        expect.objectContaining({ errors: { 0: true }, isPending: false })
       );
 
-      // the value at the time when 'validateOnce' is called is used
-      await expect(promise).resolves.toEqual({
-        value: [42],
-        errors: { 0: false },
-      });
+      await expect(promise).resolves.toEqual({ 0: false });
     });
   });
 

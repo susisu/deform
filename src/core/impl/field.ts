@@ -5,7 +5,6 @@ import {
   Snapshot,
   Subscriber,
   ValidateOnceOptions,
-  ValidateOnceResult,
   Validator,
   isEqualErrors,
   isValid,
@@ -450,7 +449,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     return Object.fromEntries(entries);
   }
 
-  validateOnce(options?: ValidateOnceOptions): Promise<ValidateOnceResult<T>> {
+  validateOnce(options?: ValidateOnceOptions): Promise<Errors> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
@@ -466,7 +465,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     const customErrors = this.customErrors;
     const childrenErrorsKeyMapper = this.childrenErrorsKeyMapper;
 
-    return new Promise<ValidateOnceResult<T>>((resolve, reject) => {
+    return new Promise<Errors>((resolve, reject) => {
       if (controller.signal.aborted) {
         reject(new Error("Aborted"));
         return;
@@ -479,8 +478,7 @@ export abstract class FieldImpl<T> implements Field<T> {
           this.validateChildrenOnce(childrenErrorsKeyMapper, controller.signal),
           this.runAllValidatorsOnce(value, controller.signal),
         ]);
-        const errors = mergeErrors({ childrenErrors, validationErrors, customErrors });
-        return { value, errors };
+        return mergeErrors({ childrenErrors, validationErrors, customErrors });
       })().then(resolve, (err: unknown) => {
         reject(err);
         controller.abort();
@@ -588,7 +586,7 @@ export abstract class FieldImpl<T> implements Field<T> {
       validate: () => {
         this.validate();
       },
-      validateOnce: signal => this.validateOnce({ signal }).then(({ errors }) => errors),
+      validateOnce: signal => this.validateOnce({ signal }),
     };
   }
 
