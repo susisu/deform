@@ -267,6 +267,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   setValue(value: T): void {
     if (this.bareSetValue(value)) {
       this.updateChildrenValue();
+      this.setDirty();
       this.runAllValidators();
     }
   }

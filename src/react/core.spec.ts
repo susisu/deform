@@ -108,7 +108,7 @@ describe("useChild", () => {
       defaultValue: 0,
       value: 2,
       isTouched: false,
-      isDirty: false,
+      isDirty: true,
       errors: {},
       isPending: false,
     });
@@ -158,7 +158,7 @@ describe("useChildArray", () => {
       defaultValue: [0, 1],
       value: [3],
       isTouched: false,
-      isDirty: false,
+      isDirty: true,
       errors: { 0: false },
       isPending: false,
     });
@@ -227,7 +227,7 @@ describe("useSnapshot", () => {
       defaultValue: 0,
       value: 42,
       isTouched: false,
-      isDirty: false,
+      isDirty: true,
       errors: {},
       isPending: false,
     });

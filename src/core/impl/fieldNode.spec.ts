@@ -54,7 +54,7 @@ describe("FieldNodeImpl", () => {
         defaultValue: 0,
         value: 1,
         isTouched: false,
-        isDirty: false,
+        isDirty: true,
         errors: {},
         isPending: false,
       });
@@ -236,28 +236,38 @@ describe("FieldNodeImpl", () => {
   });
 
   describe("#setValue", () => {
-    it("sets the value of the field", async () => {
+    it("sets the value of the field and flags the field is dirty", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 42,
       });
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 42, isDirty: false }));
 
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
+      // does nothing if the same value is already set
+      field.setValue(42);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 42, isDirty: false }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
       field.setValue(1);
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1, isDirty: true }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1 }));
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ value: 1, isDirty: true })
+      );
 
       // does nothing if the same value is already set
       field.setValue(1);
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1, isDirty: true }));
 
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
@@ -270,21 +280,23 @@ describe("FieldNodeImpl", () => {
         defaultValue: 0,
         value: 42,
       });
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 42 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 42, isDirty: false }));
 
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
       field.setValue(1);
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 1, isDirty: true }));
 
       field.setValue(2);
-      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 2 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ value: 2, isDirty: true }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: 2 }));
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ value: 2, isDirty: true })
+      );
     });
 
     it("triggers validation", () => {

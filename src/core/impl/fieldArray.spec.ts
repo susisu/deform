@@ -55,7 +55,7 @@ describe("FieldArrayImpl", () => {
         defaultValue: [0],
         value: [1, 2],
         isTouched: false,
-        isDirty: false,
+        isDirty: true,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -272,7 +272,7 @@ describe("FieldArrayImpl", () => {
         defaultValue: [0],
         value: [1, 43],
         isTouched: false,
-        isDirty: false,
+        isDirty: true,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -283,7 +283,7 @@ describe("FieldArrayImpl", () => {
           defaultValue: 42,
           value: 1,
           isTouched: false,
-          isDirty: false,
+          isDirty: true,
           errors: {},
           isPending: false,
         },
@@ -306,7 +306,7 @@ describe("FieldArrayImpl", () => {
         defaultValue: [0],
         value: [1, 43],
         isTouched: false,
-        isDirty: false,
+        isDirty: true,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -495,29 +495,48 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#setValue", () => {
-    it("sets the value of the field array", async () => {
+    it("sets the value of the field array and flags the field array is dirty", async () => {
+      const initialValue = [42];
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
-        value: [42],
+        value: initialValue,
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42], isDirty: false })
+      );
 
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
+      // does nothing if the same value is already set
+      fieldArray.setValue(initialValue);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42], isDirty: false })
+      );
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
       const newValue = [1, 2];
       fieldArray.setValue(newValue);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [1, 2], isDirty: true })
+      );
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [1, 2] }));
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ value: [1, 2], isDirty: true })
+      );
 
       // does nothing if the same value is already set
       fieldArray.setValue(newValue);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [1, 2], isDirty: true })
+      );
 
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
@@ -530,21 +549,29 @@ describe("FieldArrayImpl", () => {
         defaultValue: [0],
         value: [42],
       });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42], isDirty: false })
+      );
 
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
       fieldArray.setValue([1, 2]);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [1, 2] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [1, 2], isDirty: true })
+      );
 
       fieldArray.setValue([3]);
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ value: [3] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [3], isDirty: true })
+      );
 
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ value: [3] }));
+      expect(subscriber).toHaveBeenLastCalledWith(
+        expect.objectContaining({ value: [3], isDirty: true })
+      );
     });
 
     it("triggers validation", () => {
@@ -2597,19 +2624,43 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribeFields(subscriber);
 
+      // move to the same index = do nothing
+      fieldArray.move(2, 2);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 43, 44, 45, 46] })
+      );
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(5);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2[1].id).toBe(fields1[1].id);
+      expect(fields2[2].id).toBe(fields1[2].id);
+      expect(fields2[3].id).toBe(fields1[3].id);
+      expect(fields2[4].id).toBe(fields1[4].id);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+        expect.objectContaining({ defaultValue: 44, value: 44 }),
+        expect.objectContaining({ defaultValue: 45, value: 45 }),
+        expect.objectContaining({ defaultValue: 46, value: 46 }),
+      ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
       // move forward
       fieldArray.move(1, 3);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 44, 45, 43, 46] })
       );
-      const fields2 = fieldArray.getFields();
-      expect(fields2).toHaveLength(5);
-      expect(fields2[0].id).toBe(fields1[0].id);
-      expect(fields2[1].id).toBe(fields1[2].id);
-      expect(fields2[2].id).toBe(fields1[3].id);
-      expect(fields2[3].id).toBe(fields1[1].id);
-      expect(fields2[4].id).toBe(fields1[4].id);
-      expect(fields2.map(field => field.getSnapshot())).toEqual([
+      const fields3 = fieldArray.getFields();
+      expect(fields3).toHaveLength(5);
+      expect(fields3[0].id).toBe(fields2[0].id);
+      expect(fields3[1].id).toBe(fields2[2].id);
+      expect(fields3[2].id).toBe(fields2[3].id);
+      expect(fields3[3].id).toBe(fields2[1].id);
+      expect(fields3[4].id).toBe(fields2[4].id);
+      expect(fields3.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
         expect.objectContaining({ defaultValue: 45, value: 45 }),
@@ -2620,20 +2671,20 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+      expect(subscriber).toHaveBeenLastCalledWith(fields3);
 
-      fields2[2].setValue(1);
+      fields3[2].setValue(1);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 44, 1, 43, 46] })
       );
-      const fields3 = fieldArray.getFields();
-      expect(fields3).toHaveLength(5);
-      expect(fields3[0].id).toBe(fields2[0].id);
-      expect(fields3[1].id).toBe(fields2[1].id);
-      expect(fields3[2].id).toBe(fields2[2].id);
-      expect(fields3[3].id).toBe(fields2[3].id);
-      expect(fields3[4].id).toBe(fields2[4].id);
-      expect(fields3.map(field => field.getSnapshot())).toEqual([
+      const fields4 = fieldArray.getFields();
+      expect(fields4).toHaveLength(5);
+      expect(fields4[0].id).toBe(fields3[0].id);
+      expect(fields4[1].id).toBe(fields3[1].id);
+      expect(fields4[2].id).toBe(fields3[2].id);
+      expect(fields4[3].id).toBe(fields3[3].id);
+      expect(fields4[4].id).toBe(fields3[4].id);
+      expect(fields4.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
         expect.objectContaining({ defaultValue: 45, value: 1 }),
@@ -2650,14 +2701,14 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 43, 44, 1, 46] })
       );
-      const fields4 = fieldArray.getFields();
-      expect(fields4).toHaveLength(5);
-      expect(fields4[0].id).toBe(fields3[0].id);
-      expect(fields4[1].id).toBe(fields3[3].id);
-      expect(fields4[2].id).toBe(fields3[1].id);
-      expect(fields4[3].id).toBe(fields3[2].id);
-      expect(fields4[4].id).toBe(fields3[4].id);
-      expect(fields4.map(field => field.getSnapshot())).toEqual([
+      const fields5 = fieldArray.getFields();
+      expect(fields5).toHaveLength(5);
+      expect(fields5[0].id).toBe(fields4[0].id);
+      expect(fields5[1].id).toBe(fields4[3].id);
+      expect(fields5[2].id).toBe(fields4[1].id);
+      expect(fields5[3].id).toBe(fields4[2].id);
+      expect(fields5[4].id).toBe(fields4[4].id);
+      expect(fields5.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 43, value: 43 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
@@ -2668,33 +2719,9 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
-      expect(subscriber).toHaveBeenLastCalledWith(fields4);
+      expect(subscriber).toHaveBeenLastCalledWith(fields5);
 
-      fields4[2].setValue(2);
-      expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ value: [42, 43, 2, 1, 46] })
-      );
-      const fields5 = fieldArray.getFields();
-      expect(fields5).toHaveLength(5);
-      expect(fields5[0].id).toBe(fields4[0].id);
-      expect(fields5[1].id).toBe(fields4[1].id);
-      expect(fields5[2].id).toBe(fields4[2].id);
-      expect(fields5[3].id).toBe(fields4[3].id);
-      expect(fields5[4].id).toBe(fields4[4].id);
-      expect(fields5.map(field => field.getSnapshot())).toEqual([
-        expect.objectContaining({ defaultValue: 42, value: 42 }),
-        expect.objectContaining({ defaultValue: 43, value: 43 }),
-        expect.objectContaining({ defaultValue: 44, value: 2 }),
-        expect.objectContaining({ defaultValue: 45, value: 1 }),
-        expect.objectContaining({ defaultValue: 46, value: 46 }),
-      ]);
-
-      expect(subscriber).toHaveBeenCalledTimes(2);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(2);
-
-      // move to the same index = do nothing
-      fieldArray.move(2, 2);
+      fields5[2].setValue(2);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 43, 2, 1, 46] })
       );
@@ -2762,19 +2789,43 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribeFields(subscriber);
 
+      // swap with the same index = do nothing
+      fieldArray.swap(2, 2);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ value: [42, 43, 44, 45, 46] })
+      );
+      const fields2 = fieldArray.getFields();
+      expect(fields2).toHaveLength(5);
+      expect(fields2[0].id).toBe(fields1[0].id);
+      expect(fields2[1].id).toBe(fields1[1].id);
+      expect(fields2[2].id).toBe(fields1[2].id);
+      expect(fields2[3].id).toBe(fields1[3].id);
+      expect(fields2[4].id).toBe(fields1[4].id);
+      expect(fields2.map(field => field.getSnapshot())).toEqual([
+        expect.objectContaining({ defaultValue: 42, value: 42 }),
+        expect.objectContaining({ defaultValue: 43, value: 43 }),
+        expect.objectContaining({ defaultValue: 44, value: 44 }),
+        expect.objectContaining({ defaultValue: 45, value: 45 }),
+        expect.objectContaining({ defaultValue: 46, value: 46 }),
+      ]);
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(0);
+
       // swap forward
       fieldArray.swap(1, 3);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 45, 44, 43, 46] })
       );
-      const fields2 = fieldArray.getFields();
-      expect(fields2).toHaveLength(5);
-      expect(fields2[0].id).toBe(fields1[0].id);
-      expect(fields2[1].id).toBe(fields1[3].id);
-      expect(fields2[2].id).toBe(fields1[2].id);
-      expect(fields2[3].id).toBe(fields1[1].id);
-      expect(fields2[4].id).toBe(fields1[4].id);
-      expect(fields2.map(field => field.getSnapshot())).toEqual([
+      const fields3 = fieldArray.getFields();
+      expect(fields3).toHaveLength(5);
+      expect(fields3[0].id).toBe(fields2[0].id);
+      expect(fields3[1].id).toBe(fields2[3].id);
+      expect(fields3[2].id).toBe(fields2[2].id);
+      expect(fields3[3].id).toBe(fields2[1].id);
+      expect(fields3[4].id).toBe(fields2[4].id);
+      expect(fields3.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 45, value: 45 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
@@ -2785,20 +2836,20 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(0);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(fields2);
+      expect(subscriber).toHaveBeenLastCalledWith(fields3);
 
-      fields2[3].setValue(1);
+      fields3[3].setValue(1);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 45, 44, 1, 46] })
       );
-      const fields3 = fieldArray.getFields();
-      expect(fields3).toHaveLength(5);
-      expect(fields3[0].id).toBe(fields2[0].id);
-      expect(fields3[1].id).toBe(fields2[1].id);
-      expect(fields3[2].id).toBe(fields2[2].id);
-      expect(fields3[3].id).toBe(fields2[3].id);
-      expect(fields3[4].id).toBe(fields2[4].id);
-      expect(fields3.map(field => field.getSnapshot())).toEqual([
+      const fields4 = fieldArray.getFields();
+      expect(fields4).toHaveLength(5);
+      expect(fields4[0].id).toBe(fields3[0].id);
+      expect(fields4[1].id).toBe(fields3[1].id);
+      expect(fields4[2].id).toBe(fields3[2].id);
+      expect(fields4[3].id).toBe(fields3[3].id);
+      expect(fields4[4].id).toBe(fields3[4].id);
+      expect(fields4.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 45, value: 45 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
@@ -2811,14 +2862,14 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 1, 44, 45, 46] })
       );
-      const fields4 = fieldArray.getFields();
-      expect(fields4).toHaveLength(5);
-      expect(fields4[0].id).toBe(fields3[0].id);
-      expect(fields4[1].id).toBe(fields3[3].id);
-      expect(fields4[2].id).toBe(fields3[2].id);
-      expect(fields4[3].id).toBe(fields3[1].id);
-      expect(fields4[4].id).toBe(fields3[4].id);
-      expect(fields4.map(field => field.getSnapshot())).toEqual([
+      const fields5 = fieldArray.getFields();
+      expect(fields5).toHaveLength(5);
+      expect(fields5[0].id).toBe(fields4[0].id);
+      expect(fields5[1].id).toBe(fields4[3].id);
+      expect(fields5[2].id).toBe(fields4[2].id);
+      expect(fields5[3].id).toBe(fields4[1].id);
+      expect(fields5[4].id).toBe(fields4[4].id);
+      expect(fields5.map(field => field.getSnapshot())).toEqual([
         expect.objectContaining({ defaultValue: 42, value: 42 }),
         expect.objectContaining({ defaultValue: 43, value: 1 }),
         expect.objectContaining({ defaultValue: 44, value: 44 }),
@@ -2829,33 +2880,9 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
-      expect(subscriber).toHaveBeenLastCalledWith(fields4);
+      expect(subscriber).toHaveBeenLastCalledWith(fields5);
 
-      fields4[3].setValue(2);
-      expect(fieldArray.getSnapshot()).toEqual(
-        expect.objectContaining({ value: [42, 1, 44, 2, 46] })
-      );
-      const fields5 = fieldArray.getFields();
-      expect(fields5).toHaveLength(5);
-      expect(fields5[0].id).toBe(fields4[0].id);
-      expect(fields5[1].id).toBe(fields4[1].id);
-      expect(fields5[2].id).toBe(fields4[2].id);
-      expect(fields5[3].id).toBe(fields4[3].id);
-      expect(fields5[4].id).toBe(fields4[4].id);
-      expect(fields5.map(field => field.getSnapshot())).toEqual([
-        expect.objectContaining({ defaultValue: 42, value: 42 }),
-        expect.objectContaining({ defaultValue: 43, value: 1 }),
-        expect.objectContaining({ defaultValue: 44, value: 44 }),
-        expect.objectContaining({ defaultValue: 45, value: 2 }),
-        expect.objectContaining({ defaultValue: 46, value: 46 }),
-      ]);
-
-      expect(subscriber).toHaveBeenCalledTimes(2);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(2);
-
-      // swap with the same index = do nothing
-      fieldArray.swap(2, 2);
+      fields5[3].setValue(2);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ value: [42, 1, 44, 2, 46] })
       );
