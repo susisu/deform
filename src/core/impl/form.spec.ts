@@ -34,8 +34,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 0, y: 1 },
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: {},
         isPending: false,
       });
@@ -50,8 +50,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: {},
         isPending: false,
       });
@@ -504,8 +504,8 @@ describe("FormImpl", () => {
         handler: async () => {},
       });
       form.root.setValue({ x: 42, y: 43 });
-      form.root.setTouched();
       form.root.setDirty();
+      form.root.setTouched();
       form.root.setCustomErrors({ foo: true });
       form.root.addValidator("bar", ({ resolve }) => {
         resolve(true);
@@ -513,8 +513,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { foo: true, bar: true },
         isPending: false,
       });
@@ -523,8 +523,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 0, y: 1 },
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { bar: true },
         isPending: false,
       });
@@ -536,8 +536,8 @@ describe("FormImpl", () => {
         handler: async () => {},
       });
       form.root.setValue({ x: 42, y: 43 });
-      form.root.setTouched();
       form.root.setDirty();
+      form.root.setTouched();
       form.root.setCustomErrors({ foo: true });
       form.root.addValidator("bar", ({ resolve }) => {
         resolve(true);
@@ -545,8 +545,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { foo: true, bar: true },
         isPending: false,
       });
@@ -555,8 +555,8 @@ describe("FormImpl", () => {
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 2, y: 3 },
         value: { x: 2, y: 3 },
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { bar: true },
         isPending: false,
       });

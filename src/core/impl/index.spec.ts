@@ -11,8 +11,8 @@ describe("createForm", () => {
     expect(form.root.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 0,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -35,8 +35,8 @@ describe("createForm", () => {
     expect(form.root.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 1,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -49,8 +49,8 @@ describe("createFieldNode", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 0,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -61,8 +61,8 @@ describe("createFieldNode", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 1,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -75,8 +75,8 @@ describe("createFieldArray", () => {
     expect(fieldArray.getSnapshot()).toEqual({
       defaultValue: [0],
       value: [0],
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: { 0: false },
       isPending: false,
     });
@@ -87,8 +87,8 @@ describe("createFieldArray", () => {
     expect(fieldArray.getSnapshot()).toEqual({
       defaultValue: [0],
       value: [1, 2],
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: { 0: false, 1: false },
       isPending: false,
     });
@@ -101,8 +101,8 @@ describe("createField", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 0,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -113,8 +113,8 @@ describe("createField", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 1,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });

@@ -29,8 +29,8 @@ describe("useForm", () => {
     expect(t.result.current.root.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -95,8 +95,8 @@ describe("useChild", () => {
     expect(t.result.current.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -107,8 +107,8 @@ describe("useChild", () => {
     expect(t.result.current.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 2,
-      isTouched: false,
       isDirty: true,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -145,8 +145,8 @@ describe("useChildArray", () => {
     expect(t.result.current.getSnapshot()).toEqual({
       defaultValue: [0, 1],
       value: [42, 43],
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: { 0: false, 1: false },
       isPending: false,
     });
@@ -157,8 +157,8 @@ describe("useChildArray", () => {
     expect(t.result.current.getSnapshot()).toEqual({
       defaultValue: [0, 1],
       value: [3],
-      isTouched: false,
       isDirty: true,
+      isTouched: false,
       errors: { 0: false },
       isPending: false,
     });
@@ -214,8 +214,8 @@ describe("useSnapshot", () => {
     expect(t.result.current).toEqual({
       defaultValue: 0,
       value: 0,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -226,8 +226,8 @@ describe("useSnapshot", () => {
     expect(t.result.current).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: true,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -267,8 +267,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -281,8 +281,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: true,
     });
@@ -291,8 +291,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: { foo: true },
       isPending: false,
     });
@@ -301,8 +301,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -316,8 +316,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });
@@ -332,8 +332,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: { foo: true },
       isPending: false,
     });
@@ -342,8 +342,8 @@ describe("useValidator", () => {
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
-      isTouched: false,
       isDirty: false,
+      isTouched: false,
       errors: {},
       isPending: false,
     });

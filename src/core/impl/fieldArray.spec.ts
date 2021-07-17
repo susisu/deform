@@ -43,8 +43,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [42],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: false,
       });
@@ -54,8 +54,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 2],
-        isTouched: false,
         isDirty: true,
+        isTouched: false,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -199,8 +199,8 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 42,
           value: 42,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -213,16 +213,16 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 1,
           value: 1,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
         {
           defaultValue: 2,
           value: 2,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -238,8 +238,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [42, 43],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -249,16 +249,16 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 42,
           value: 42,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
         {
           defaultValue: 43,
           value: 43,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -271,8 +271,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 43],
-        isTouched: false,
         isDirty: true,
+        isTouched: false,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -282,16 +282,16 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 42,
           value: 1,
-          isTouched: false,
           isDirty: true,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
         {
           defaultValue: 43,
           value: 43,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -305,8 +305,8 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenLastCalledWith({
         defaultValue: [0],
         value: [1, 43],
-        isTouched: false,
         isDirty: true,
+        isTouched: false,
         errors: { 0: false, 1: false },
         isPending: false,
       });
@@ -337,16 +337,16 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 1,
           value: 1,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
         {
           defaultValue: 2,
           value: 2,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -386,16 +386,16 @@ describe("FieldArrayImpl", () => {
         {
           defaultValue: 1,
           value: 1,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
         {
           defaultValue: 2,
           value: 2,
-          isTouched: false,
           isDirty: false,
+          isTouched: false,
           errors: {},
           isPending: false,
         },
@@ -674,35 +674,6 @@ describe("FieldArrayImpl", () => {
     });
   });
 
-  describe("#setTouched", () => {
-    it("sets the field array touched", async () => {
-      const fieldArray = new FieldArrayImpl({
-        path: "$root",
-        defaultValue: [0],
-        value: [42],
-      });
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-
-      const subscriber = jest.fn(() => {});
-      fieldArray.subscribe(subscriber);
-
-      fieldArray.setTouched();
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-
-      expect(subscriber).toHaveBeenCalledTimes(0);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ isTouched: true }));
-
-      // does nothing if the field array is already touched
-      fieldArray.setTouched();
-      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
-      expect(subscriber).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe("#setDirty", () => {
     it("sets the field array dirty", async () => {
       const fieldArray = new FieldArrayImpl({
@@ -726,6 +697,35 @@ describe("FieldArrayImpl", () => {
       // does nothing if the field array is already dirty
       fieldArray.setDirty();
       expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#setTouched", () => {
+    it("sets the field array touched", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      const subscriber = jest.fn(() => {});
+      fieldArray.subscribe(subscriber);
+
+      fieldArray.setTouched();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      expect(subscriber).toHaveBeenCalledTimes(0);
+      await waitForMicrotasks();
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ isTouched: true }));
+
+      // does nothing if the field array is already touched
+      fieldArray.setTouched();
+      expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
       expect(subscriber).toHaveBeenCalledTimes(1);
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(1);
@@ -850,8 +850,8 @@ describe("FieldArrayImpl", () => {
         value: [42],
       });
       fieldArray.setValue([1, 2]);
-      fieldArray.setTouched();
       fieldArray.setDirty();
+      fieldArray.setTouched();
       fieldArray.setCustomErrors({ foo: true });
       const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
       fieldArray.addValidator("bar", validator);
@@ -862,8 +862,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 2],
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { 0: false, 1: false, foo: true, bar: true },
         isPending: false,
       });
@@ -878,8 +878,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: true,
       });
@@ -890,8 +890,8 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenLastCalledWith({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: true,
       });
@@ -900,8 +900,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, bar: false },
         isPending: false,
       });
@@ -912,8 +912,8 @@ describe("FieldArrayImpl", () => {
       expect(subscriber).toHaveBeenLastCalledWith({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, bar: false },
         isPending: false,
       });
@@ -935,8 +935,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, foo: true },
         isPending: false,
       });
@@ -948,8 +948,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: true,
       });
@@ -958,8 +958,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, foo: false },
         isPending: false,
       });
@@ -972,8 +972,8 @@ describe("FieldArrayImpl", () => {
         value: [42],
       });
       fieldArray.setValue([1, 2]);
-      fieldArray.setTouched();
       fieldArray.setDirty();
+      fieldArray.setTouched();
       fieldArray.setCustomErrors({ foo: true });
       const validator: Validator<readonly number[]> = ({ resolve }) => {
         resolve(true);
@@ -982,8 +982,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 2],
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { 0: false, 1: false, foo: true, bar: true },
         isPending: false,
       });
@@ -995,8 +995,8 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false, bar: true },
         isPending: false,
       });
@@ -1012,8 +1012,8 @@ describe("FieldArrayImpl", () => {
       expect(fields1).toHaveLength(1);
       const field1 = fields1[0];
       field1.setValue(1);
-      field1.setTouched();
       field1.setDirty();
+      field1.setTouched();
       field1.setCustomErrors({ foo: true });
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       field1.addValidator("bar", validator);
@@ -1024,16 +1024,16 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1],
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { 0: true },
         isPending: false,
       });
       expect(field1.getSnapshot()).toEqual({
         defaultValue: 42,
         value: 1,
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { foo: true, bar: {} },
         isPending: false,
       });
@@ -1050,16 +1050,16 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: false,
       });
       expect(field2.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: {},
         isPending: false,
       });
@@ -1075,8 +1075,8 @@ describe("FieldArrayImpl", () => {
       const fields = fieldArray.getFields();
       expect(fields).toHaveLength(1);
       const field = fields[0];
-      field.setTouched();
       field.setDirty();
+      field.setTouched();
       field.setCustomErrors({ foo: true });
       const validator = jest.fn((_: ValidationRequest<number>) => {});
       field.addValidator("bar", validator);
@@ -1087,16 +1087,16 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { 0: true },
         isPending: false,
       });
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
-        isTouched: true,
         isDirty: true,
+        isTouched: true,
         errors: { foo: true, bar: {} },
         isPending: false,
       });
@@ -1108,16 +1108,16 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: true,
       });
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: {},
         isPending: true,
       });
@@ -1126,16 +1126,16 @@ describe("FieldArrayImpl", () => {
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { 0: false },
         isPending: false,
       });
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
-        isTouched: false,
         isDirty: false,
+        isTouched: false,
         errors: { bar: null },
         isPending: false,
       });
@@ -2093,54 +2093,6 @@ describe("FieldArrayImpl", () => {
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ value: [4] }));
     });
 
-    it("synchronizes the touched state from a child to the parent", () => {
-      const parent = new FieldNodeImpl({
-        path: "$root",
-        defaultValue: { x: [0], y: 1 },
-        value: { x: [42], y: 43 },
-      });
-      const child = parent.createChildArray("x");
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-
-      const disconnect = child.connect();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-
-      child.setTouched();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-
-      disconnect();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-
-      child.connect();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-    });
-
-    it("does not synchronize the touched state from the parent to a child", () => {
-      const parent = new FieldNodeImpl({
-        path: "$root",
-        defaultValue: { x: [0], y: 1 },
-        value: { x: [42], y: 43 },
-      });
-      const child = parent.createChildArray("x");
-      const disconnect = child.connect();
-      parent.setTouched();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-
-      disconnect();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-
-      child.connect();
-      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
-      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
-    });
-
     it("synchronizes the dirty state from a child to the parent", () => {
       const parent = new FieldNodeImpl({
         path: "$root",
@@ -2187,6 +2139,54 @@ describe("FieldArrayImpl", () => {
       child.connect();
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isDirty: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isDirty: false }));
+    });
+
+    it("synchronizes the touched state from a child to the parent", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      const disconnect = child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      child.setTouched();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+    });
+
+    it("does not synchronize the touched state from the parent to a child", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: [0], y: 1 },
+        value: { x: [42], y: 43 },
+      });
+      const child = parent.createChildArray("x");
+      const disconnect = child.connect();
+      parent.setTouched();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      disconnect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
+
+      child.connect();
+      expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isTouched: true }));
+      expect(child.getSnapshot()).toEqual(expect.objectContaining({ isTouched: false }));
     });
 
     it("synchronizes the errors from a child to the parent", () => {

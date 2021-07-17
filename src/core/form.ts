@@ -10,8 +10,8 @@ export interface Field<T> {
   flushDispatchQueue(): void;
   setDefaultValue(value: T): void;
   setValue(value: T): void;
-  setTouched(): void;
   setDirty(): void;
+  setTouched(): void;
   setCustomErrors(errors: Errors): void;
   reset(): void;
   addValidator(key: string, validator: Validator<T>): Disposable;
@@ -23,8 +23,8 @@ export interface Field<T> {
 export type Snapshot<T> = Readonly<{
   defaultValue: T;
   value: T;
-  isTouched: boolean;
   isDirty: boolean;
+  isTouched: boolean;
   errors: Errors;
   isPending: boolean;
 }>;

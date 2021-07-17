@@ -334,14 +334,14 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
           this.setValue(newValue);
         }
       },
-      setIsTouched: isTouched => {
-        if (this.children.get(key) === child) {
-          this.setChildIsTouched(key, isTouched);
-        }
-      },
       setIsDirty: isDirty => {
         if (this.children.get(key) === child) {
           this.setChildIsDirty(key, isDirty);
+        }
+      },
+      setIsTouched: isTouched => {
+        if (this.children.get(key) === child) {
+          this.setChildIsTouched(key, isTouched);
         }
       },
       setErrors: errors => {
@@ -367,8 +367,8 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
 
   private detachChild(key: string, child: Child<readonly T[]>): void {
     if (this.children.get(key) === child) {
-      this.unsetChildIsTouched(key);
       this.unsetChildIsDirty(key);
+      this.unsetChildIsTouched(key);
       this.unsetChildErrors(key);
       this.unsetChildIsPending(key);
       this.children.delete(key);

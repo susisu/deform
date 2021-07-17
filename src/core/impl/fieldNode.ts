@@ -131,14 +131,14 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
           this.setValue(setter(this.value, value));
         }
       },
-      setIsTouched: isTouched => {
-        if (this.children.get(key) === child) {
-          this.setChildIsTouched(key, isTouched);
-        }
-      },
       setIsDirty: isDirty => {
         if (this.children.get(key) === child) {
           this.setChildIsDirty(key, isDirty);
+        }
+      },
+      setIsTouched: isTouched => {
+        if (this.children.get(key) === child) {
+          this.setChildIsTouched(key, isTouched);
         }
       },
       setErrors: errors => {
@@ -165,8 +165,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
 
   private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
     if (this.children.get(key) === child) {
-      this.unsetChildIsTouched(key);
       this.unsetChildIsDirty(key);
+      this.unsetChildIsTouched(key);
       this.unsetChildErrors(key);
       this.unsetChildIsPending(key);
       this.children.delete(key);

@@ -16,8 +16,8 @@ export type Parent<T> = Readonly<{
   detach: () => void;
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
-  setIsTouched: (isTouched: boolean) => void;
   setIsDirty: (isDirty: boolean) => void;
+  setIsTouched: (isTouched: boolean) => void;
   setErrors: (errors: Errors) => void;
   setIsPending: (isPending: boolean) => void;
 }>;

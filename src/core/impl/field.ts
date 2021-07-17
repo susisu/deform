@@ -30,8 +30,8 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   protected defaultValue: T;
   protected value: T;
-  private isTouched: boolean;
   private isDirty: boolean;
+  private isTouched: boolean;
 
   private validationErrors: Errors;
   private customErrors: Errors;
@@ -39,8 +39,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   private validators: Map<string, Validator<T>>;
   private pendingValidations: Map<string, PendingValidation>;
 
-  private touchedChildKeys: Set<PropertyKey>;
   private dirtyChildKeys: Set<PropertyKey>;
+  private touchedChildKeys: Set<PropertyKey>;
   private childrenErrors: Map<PropertyKey, Errors>;
   private childrenErrorsKeyMapper: KeyMapper;
   private pendingChildKeys: Set<PropertyKey>;
@@ -63,8 +63,8 @@ export abstract class FieldImpl<T> implements Field<T> {
 
     this.defaultValue = params.defaultValue;
     this.value = params.value;
-    this.isTouched = false;
     this.isDirty = false;
+    this.isTouched = false;
 
     this.validationErrors = {};
     this.customErrors = {};
@@ -72,8 +72,8 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.validators = new Map();
     this.pendingValidations = new Map();
 
-    this.touchedChildKeys = new Set();
     this.dirtyChildKeys = new Set();
+    this.touchedChildKeys = new Set();
     this.childrenErrors = new Map();
     this.childrenErrorsKeyMapper = key => key;
     this.pendingChildKeys = new Set();
@@ -81,8 +81,8 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.snapshot = {
       defaultValue: this.calcSnapshotDefaultValue(),
       value: this.calcSnapshotValue(),
-      isTouched: this.calcSnapshotIsTouched(),
       isDirty: this.calcSnapshotIsDirty(),
+      isTouched: this.calcSnapshotIsTouched(),
       errors: this.calcSnapshotErrors(),
       isPending: this.calcSnapshotIsPending(),
     };
@@ -100,14 +100,14 @@ export abstract class FieldImpl<T> implements Field<T> {
     return this.value;
   }
 
-  // depends on: isTouched, touchedChildKeys
-  private calcSnapshotIsTouched(): boolean {
-    return this.isTouched || this.touchedChildKeys.size > 0;
-  }
-
   // depends on: isDirty, dirtyChildKeys
   private calcSnapshotIsDirty(): boolean {
     return this.isDirty || this.dirtyChildKeys.size > 0;
+  }
+
+  // depends on: isTouched, touchedChildKeys
+  private calcSnapshotIsTouched(): boolean {
+    return this.isTouched || this.touchedChildKeys.size > 0;
   }
 
   // depends on: childrenErrors, childrenErrorsKeyMapper, validationErrors, customErrors
@@ -190,16 +190,6 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.updateParentValue();
   }
 
-  private updateSnapshotIsTouched(): void {
-    const isTouched = this.calcSnapshotIsTouched();
-    if (this.snapshot.isTouched === isTouched) {
-      return;
-    }
-    this.snapshot = { ...this.snapshot, isTouched };
-    this.queueDispatch();
-    this.updateParentIsTouched();
-  }
-
   private updateSnapshotIsDirty(): void {
     const isDirty = this.calcSnapshotIsDirty();
     if (this.snapshot.isDirty === isDirty) {
@@ -208,6 +198,16 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.snapshot = { ...this.snapshot, isDirty };
     this.queueDispatch();
     this.updateParentIsDirty();
+  }
+
+  private updateSnapshotIsTouched(): void {
+    const isTouched = this.calcSnapshotIsTouched();
+    if (this.snapshot.isTouched === isTouched) {
+      return;
+    }
+    this.snapshot = { ...this.snapshot, isTouched };
+    this.queueDispatch();
+    this.updateParentIsTouched();
   }
 
   private updateSnapshotErrors(): void {
@@ -272,18 +272,6 @@ export abstract class FieldImpl<T> implements Field<T> {
     }
   }
 
-  private setIsTouched(isTouched: boolean): void {
-    if (this.isTouched === isTouched) {
-      return;
-    }
-    this.isTouched = isTouched;
-    this.updateSnapshotIsTouched();
-  }
-
-  setTouched(): void {
-    this.setIsTouched(true);
-  }
-
   private setIsDirty(isDirty: boolean): void {
     if (this.isDirty === isDirty) {
       return;
@@ -294,6 +282,18 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   setDirty(): void {
     this.setIsDirty(true);
+  }
+
+  private setIsTouched(isTouched: boolean): void {
+    if (this.isTouched === isTouched) {
+      return;
+    }
+    this.isTouched = isTouched;
+    this.updateSnapshotIsTouched();
+  }
+
+  setTouched(): void {
+    this.setIsTouched(true);
   }
 
   protected setChildrenErrorsKeyMapper(mapper: KeyMapper): void {
@@ -322,8 +322,8 @@ export abstract class FieldImpl<T> implements Field<T> {
 
   reset(): void {
     this.bareSetValue(this.defaultValue);
-    this.setIsTouched(false);
     this.setIsDirty(false);
+    this.setIsTouched(false);
     this.setValidationErrors({});
     this.setCustomErrors({});
     this.resetChildren();
@@ -486,20 +486,6 @@ export abstract class FieldImpl<T> implements Field<T> {
     });
   }
 
-  protected setChildIsTouched(key: PropertyKey, isTouched: boolean): void {
-    if (isTouched) {
-      this.touchedChildKeys.add(key);
-    } else {
-      this.touchedChildKeys.delete(key);
-    }
-    this.updateSnapshotIsTouched();
-  }
-
-  protected unsetChildIsTouched(key: PropertyKey): void {
-    this.touchedChildKeys.delete(key);
-    this.updateSnapshotIsTouched();
-  }
-
   protected setChildIsDirty(key: PropertyKey, isDirty: boolean): void {
     if (isDirty) {
       this.dirtyChildKeys.add(key);
@@ -512,6 +498,20 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected unsetChildIsDirty(key: PropertyKey): void {
     this.dirtyChildKeys.delete(key);
     this.updateSnapshotIsDirty();
+  }
+
+  protected setChildIsTouched(key: PropertyKey, isTouched: boolean): void {
+    if (isTouched) {
+      this.touchedChildKeys.add(key);
+    } else {
+      this.touchedChildKeys.delete(key);
+    }
+    this.updateSnapshotIsTouched();
+  }
+
+  protected unsetChildIsTouched(key: PropertyKey): void {
+    this.touchedChildKeys.delete(key);
+    this.updateSnapshotIsTouched();
   }
 
   protected setChildErrors(key: PropertyKey, errors: Errors): void {
@@ -549,8 +549,8 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.parent.attach();
     this.parent.setDefaultValue(this.snapshot.defaultValue);
     this.parent.setValue(this.snapshot.value);
-    this.parent.setIsTouched(this.snapshot.isTouched);
     this.parent.setIsDirty(this.snapshot.isDirty);
+    this.parent.setIsTouched(this.snapshot.isTouched);
     this.parent.setErrors(this.snapshot.errors);
     this.parent.setIsPending(this.snapshot.isPending);
     return () => {
@@ -602,15 +602,15 @@ export abstract class FieldImpl<T> implements Field<T> {
     }
   }
 
-  private updateParentIsTouched(): void {
-    if (this.parent && this.isConnected) {
-      this.parent.setIsTouched(this.snapshot.isTouched);
-    }
-  }
-
   private updateParentIsDirty(): void {
     if (this.parent && this.isConnected) {
       this.parent.setIsDirty(this.snapshot.isDirty);
+    }
+  }
+
+  private updateParentIsTouched(): void {
+    if (this.parent && this.isConnected) {
+      this.parent.setIsTouched(this.snapshot.isTouched);
     }
   }
 
