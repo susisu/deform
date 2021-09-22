@@ -1,26 +1,17 @@
 import { Disposable, FieldNode } from "../field";
-import {
-  Form,
-  FormState,
-  FormStateSubscriber,
-  FormSubmitHandler,
-  FormSubmitOptions,
-} from "../form";
+import { Form, FormState, FormStateSubscriber, FormSubmitAction, FormSubmitOptions } from "../form";
 import { FieldNodeImpl } from "./fieldNode";
 import { uniqueId } from "./shared";
 
 export type FormImplParams<T> = Readonly<{
   defaultValue: T;
   value?: T | undefined;
-  handler: FormSubmitHandler<T>;
 }>;
 
 export class FormImpl<T> implements Form<T> {
   readonly id: string;
 
   readonly root: FieldNode<T>;
-
-  private handler: FormSubmitHandler<T>;
 
   private pendingRequestIds: Set<string>;
   private submitCount: number;
@@ -37,8 +28,6 @@ export class FormImpl<T> implements Form<T> {
       defaultValue: params.defaultValue,
       value: params.value !== undefined ? params.value : params.defaultValue,
     });
-
-    this.handler = params.handler;
 
     this.pendingRequestIds = new Set();
     this.submitCount = 0;
@@ -115,7 +104,7 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  submit(options?: FormSubmitOptions): Promise<void> {
+  submit(action: FormSubmitAction<T>, options?: FormSubmitOptions): Promise<void> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
@@ -129,7 +118,6 @@ export class FormImpl<T> implements Form<T> {
 
     const id = `FormSubmitRequest/${uniqueId()}`;
     const { value } = this.root.getSnapshot();
-    const handler = this.handler;
 
     this.pendingRequestIds.add(id);
     this.updateStateIsSubmitting();
@@ -144,7 +132,7 @@ export class FormImpl<T> implements Form<T> {
       controller.signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));
       });
-      handler({ id, value, signal: controller.signal }).then(
+      action({ id, value, signal: controller.signal }).then(
         () => {
           resolve();
         },

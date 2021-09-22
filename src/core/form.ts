@@ -6,7 +6,7 @@ export interface Form<T> {
   getState(): FormState;
   subscribe(subscriber: FormStateSubscriber): Disposable;
   unsubscribe(subscriber: FormStateSubscriber): void;
-  submit(options?: FormSubmitOptions): Promise<void>;
+  submit(action: FormSubmitAction<T>, options?: FormSubmitOptions): Promise<void>;
   reset(value?: T): void;
 }
 
@@ -17,14 +17,14 @@ export type FormState = Readonly<{
 
 export type FormStateSubscriber = (state: FormState) => void;
 
-export type FormSubmitOptions = Readonly<{
-  signal?: AbortSignal | undefined;
-}>;
-
-export type FormSubmitHandler<T> = (req: FormSubmitRequest<T>) => Promise<void>;
+export type FormSubmitAction<T> = (req: FormSubmitRequest<T>) => Promise<void>;
 
 export type FormSubmitRequest<T> = Readonly<{
   id: string;
   value: T;
   signal: AbortSignal;
+}>;
+
+export type FormSubmitOptions = Readonly<{
+  signal?: AbortSignal | undefined;
 }>;

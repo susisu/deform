@@ -2,8 +2,7 @@ import { createField, createFieldArray, createFieldNode, createForm } from ".";
 
 describe("createForm", () => {
   it("creates a Form", async () => {
-    const handler = jest.fn(async () => {});
-    const form = createForm({ defaultValue: 0, handler });
+    const form = createForm({ defaultValue: 0 });
     expect(form.getState()).toEqual({
       isSubmitting: false,
       submitCount: 0,
@@ -17,9 +16,10 @@ describe("createForm", () => {
       isPending: false,
     });
 
-    await form.submit();
-    expect(handler).toHaveBeenCalledTimes(1);
-    expect(handler).toHaveBeenLastCalledWith(expect.objectContaining({ value: 0 }));
+    const action = jest.fn(async () => {});
+    await form.submit(action);
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(action).toHaveBeenLastCalledWith(expect.objectContaining({ value: 0 }));
     expect(form.getState()).toEqual({
       isSubmitting: false,
       submitCount: 1,
@@ -27,7 +27,7 @@ describe("createForm", () => {
   });
 
   it("can set an initial value", () => {
-    const form = createForm({ defaultValue: 0, value: 1, handler: async () => {} });
+    const form = createForm({ defaultValue: 0, value: 1 });
     expect(form.getState()).toEqual({
       isSubmitting: false,
       submitCount: 0,

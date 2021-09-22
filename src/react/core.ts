@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChildArrayKeyOf,
   ChildKeyOf,
@@ -15,22 +15,12 @@ import {
 } from "../core";
 
 export function useForm<T>(params: CreateFormParams<T>): Form<T> {
-  const handlerRef = useRef(params.handler);
-  useEffect(() => {
-    handlerRef.current = params.handler;
-  }, [params.handler]);
-
   const [form] = useState(() =>
     createForm({
       defaultValue: params.defaultValue,
       value: params.value,
-      handler: req => {
-        const handler = handlerRef.current;
-        return handler(req);
-      },
     })
   );
-
   return form;
 }
 

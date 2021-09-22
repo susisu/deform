@@ -1,3 +1,4 @@
+import { triplet } from "@susisu/promise-utils";
 import { waitForMicrotasks } from "../../__tests__/utils";
 import { FormSubmitRequest } from "../form";
 import { FormImpl } from "./form";
@@ -7,7 +8,6 @@ describe("FormImpl", () => {
     it("starts with 'Form/'", () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       expect(form.id).toMatch(/^Form\//);
     });
@@ -15,11 +15,9 @@ describe("FormImpl", () => {
     it("is uniquely generated for each field", () => {
       const form1 = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       const form2 = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       expect(form2.id).not.toBe(form1.id);
     });
@@ -29,7 +27,6 @@ describe("FormImpl", () => {
     it("is a root field of the form", () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
@@ -45,7 +42,6 @@ describe("FormImpl", () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler: async () => {},
       });
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
@@ -62,14 +58,13 @@ describe("FormImpl", () => {
     it("gets the latest snapshot of the form state", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
 
-      await form.submit();
+      await form.submit(async () => {});
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -81,7 +76,6 @@ describe("FormImpl", () => {
     it("attaches a function that subscribes the form state", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       const subscriber = jest.fn(() => {});
       const unsubscribe = form.subscribe(subscriber);
@@ -89,7 +83,7 @@ describe("FormImpl", () => {
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(0);
 
-      await form.submit();
+      await form.submit(async () => {});
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
@@ -114,7 +108,6 @@ describe("FormImpl", () => {
     it("detaches a function that subscribes the form state", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       const subscriber = jest.fn(() => {});
       form.subscribe(subscriber);
@@ -122,7 +115,7 @@ describe("FormImpl", () => {
       await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(0);
 
-      await form.submit();
+      await form.submit(async () => {});
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenNthCalledWith(1, {
         isSubmitting: true,
@@ -143,18 +136,10 @@ describe("FormImpl", () => {
   });
 
   describe("#submit", () => {
-    it("submits the form using the handler", async () => {
-      const resolves: Array<() => void> = [];
-      const handler = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) =>
-          new Promise<void>(resolve => {
-            resolves.push(resolve);
-          })
-      );
+    it("creates a request and submit it to the given action", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler,
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
@@ -164,13 +149,15 @@ describe("FormImpl", () => {
       const subscriber = jest.fn(() => {});
       form.subscribe(subscriber);
 
-      const promise = form.submit();
+      const [promise, resolve] = triplet<void>();
+      const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
+      const done = form.submit(action);
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
-      expect(handler).toHaveBeenCalledTimes(1);
-      const request = handler.mock.calls[0][0];
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
       expect(request).toEqual({
         id: expect.stringMatching(/^FormSubmitRequest\//),
         value: { x: 42, y: 43 },
@@ -185,8 +172,8 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
 
-      resolves[0]();
-      await promise;
+      resolve();
+      await done;
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -198,35 +185,29 @@ describe("FormImpl", () => {
       });
     });
 
-    it("fails when the handler returns error", async () => {
-      const rejects: Array<(err: unknown) => void> = [];
-      const handler = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) =>
-          new Promise<void>((_, reject) => {
-            rejects.push(reject);
-          })
-      );
+    it("fails if the action did not finish successfully", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler,
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
 
-      const promise = form.submit();
+      const [promise, , reject] = triplet<void>();
+      const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
+      const done = form.submit(action);
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
-      expect(handler).toHaveBeenCalledTimes(1);
-      const request = handler.mock.calls[0][0];
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
 
-      rejects[0](new Error("test error"));
-      await expect(promise).rejects.toThrowError("test error");
+      reject(new Error("test error"));
+      await expect(done).rejects.toThrowError("test error");
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -234,27 +215,26 @@ describe("FormImpl", () => {
     });
 
     it("is aborted if the signal has already been aborted", async () => {
-      const handler = jest.fn(async () => {});
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler,
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
 
+      const action = jest.fn(async () => {});
       const controller = new window.AbortController();
       controller.abort();
-      const promise = form.submit({ signal: controller.signal });
+      const done = form.submit(action, { signal: controller.signal });
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
 
-      await expect(promise).rejects.toThrowError("Aborted");
-      expect(handler).toHaveBeenCalledTimes(0);
+      await expect(done).rejects.toThrowError("Aborted");
+      expect(action).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -262,27 +242,26 @@ describe("FormImpl", () => {
     });
 
     it("is aborted when the signal is aborted", async () => {
-      const handler = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<void>(() => {})
-      );
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler,
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
 
+      const action = jest.fn(
+        (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<void>(() => {})
+      );
       const controller = new window.AbortController();
-      const promise = form.submit({ signal: controller.signal });
+      const done = form.submit(action, { signal: controller.signal });
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
-      expect(handler).toHaveBeenCalledTimes(1);
-      const request = handler.mock.calls[0][0];
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
@@ -295,7 +274,7 @@ describe("FormImpl", () => {
       controller.abort();
       expect(onAbort).toHaveBeenCalled();
 
-      await expect(promise).rejects.toThrowError("Aborted");
+      await expect(done).rejects.toThrowError("Aborted");
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -303,50 +282,46 @@ describe("FormImpl", () => {
     });
 
     it("set isSubmitting = false after all the pending request are done", async () => {
-      const resolves: Array<() => void> = [];
-      const handler = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) =>
-          new Promise<void>(resolve => {
-            resolves.push(resolve);
-          })
-      );
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
-        handler,
       });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
 
-      const promise1 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(1);
-      const request1 = handler.mock.calls[0][0];
+      const [promise1, resolve1] = triplet<void>();
+      const action1 = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise1);
+      const done1 = form.submit(action1);
+      expect(action1).toHaveBeenCalledTimes(1);
+      const request1 = action1.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
 
-      const promise2 = form.submit();
-      expect(handler).toHaveBeenCalledTimes(2);
-      const request2 = handler.mock.calls[1][0];
+      const [promise2, resolve2] = triplet<void>();
+      const action2 = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise2);
+      const done2 = form.submit(action2);
+      expect(action2).toHaveBeenCalledTimes(1);
+      const request2 = action2.mock.calls[0][0];
       expect(request2).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 2,
       });
 
-      resolves[0]();
-      await promise1;
+      resolve1();
+      await done1;
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 2,
       });
 
-      resolves[1]();
-      await promise2;
+      resolve2();
+      await done2;
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 2,
@@ -358,9 +333,8 @@ describe("FormImpl", () => {
     it("resets the form state", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
-      await form.submit();
+      await form.submit(async () => {});
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -376,7 +350,6 @@ describe("FormImpl", () => {
     it("resets the field", () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       form.root.setValue({ x: 42, y: 43 });
       form.root.setDirty();
@@ -408,7 +381,6 @@ describe("FormImpl", () => {
     it("can set the default value before resetting", () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
-        handler: async () => {},
       });
       form.root.setValue({ x: 42, y: 43 });
       form.root.setDirty();

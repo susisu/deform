@@ -573,6 +573,11 @@
     "@typescript-eslint/eslint-plugin" "^4.31.0"
     "@typescript-eslint/parser" "^4.31.0"
 
+"@susisu/promise-utils@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@susisu/promise-utils/-/promise-utils-0.1.0.tgz#cd01ba6dccf2f5acd9e07866f2d6d1a0b86e0cc0"
+  integrity sha512-A3meMF+9wKXRYYKVyx6f59WO6Q8XAv+mrV26SwnI3p+Vj2pqo82jojarVKow7ZVt2FBfgM6IwAdkSrwsYnv9rQ==
+
 "@testing-library/react-hooks@^7.0.2":
   version "7.0.2"
   resolved "https://registry.yarnpkg.com/@testing-library/react-hooks/-/react-hooks-7.0.2.tgz#3388d07f562d91e7f2431a4a21b5186062ecfee0"

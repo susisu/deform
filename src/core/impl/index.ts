@@ -1,5 +1,5 @@
 import { Field, FieldArray, FieldNode } from "../field";
-import { Form, FormSubmitHandler } from "../form";
+import { Form } from "../form";
 import { FieldArrayImpl } from "./fieldArray";
 import { FieldNodeImpl } from "./fieldNode";
 import { FormImpl } from "./form";
@@ -7,14 +7,12 @@ import { FormImpl } from "./form";
 export type CreateFormParams<T> = Readonly<{
   defaultValue: T;
   value?: T | undefined;
-  handler: FormSubmitHandler<T>;
 }>;
 
 export function createForm<T>(params: CreateFormParams<T>): Form<T> {
   return new FormImpl({
     defaultValue: params.defaultValue,
     value: params.value !== undefined ? params.value : params.defaultValue,
-    handler: params.handler,
   });
 }
 
