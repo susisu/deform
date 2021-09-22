@@ -17,7 +17,6 @@ export interface Field<T> {
   addValidator(key: string, validator: Validator<T>): Disposable;
   removeValidator(key: string, validator: Validator<T>): void;
   validate(): void;
-  validateOnce(options?: ValidateOnceOptions): Promise<Errors>;
 }
 
 export type Snapshot<T> = Readonly<{
@@ -41,10 +40,6 @@ export type ValidationRequest<T> = Readonly<{
   value: T;
   resolve: (error: unknown) => void;
   signal: AbortSignal;
-}>;
-
-export type ValidateOnceOptions = Readonly<{
-  signal?: AbortSignal | undefined;
 }>;
 
 export function isEqualErrors(a: Errors, b: Errors): boolean {

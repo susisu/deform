@@ -4,12 +4,10 @@ import {
   ChildFieldNode,
   ChildKeyOf,
   ElementType,
-  Errors,
-  isValid,
 } from "../field";
 import { FieldImpl } from "./field";
 import { FieldArrayImpl } from "./fieldArray";
-import { Child, Getter, KeyMapper, Parent, Setter } from "./shared";
+import { Child, Getter, Parent, Setter } from "./shared";
 
 export type FieldNodeImplParams<T> = Readonly<{
   path: string;
@@ -195,19 +193,5 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     for (const child of this.children.values()) {
       child.validate();
     }
-  }
-
-  protected async validateChildrenOnce(
-    childrenErrorsKeyMapper: KeyMapper,
-    signal: AbortSignal
-  ): Promise<Errors> {
-    const entries = await Promise.all(
-      [...this.children].map(([key, child]) =>
-        child
-          .validateOnce(signal)
-          .then(errors => [childrenErrorsKeyMapper(key), !isValid(errors)] as const)
-      )
-    );
-    return Object.fromEntries(entries);
   }
 }
