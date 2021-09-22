@@ -1162,7 +1162,6 @@ describe("FieldArrayImpl", () => {
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: [42],
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
@@ -1196,7 +1195,6 @@ describe("FieldArrayImpl", () => {
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: [1, 2],
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
@@ -1556,7 +1554,6 @@ describe("FieldArrayImpl", () => {
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: [42],
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
@@ -1575,7 +1572,6 @@ describe("FieldArrayImpl", () => {
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: [42],
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
@@ -1613,7 +1609,6 @@ describe("FieldArrayImpl", () => {
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: 42,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
@@ -1636,7 +1631,6 @@ describe("FieldArrayImpl", () => {
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
-        onetime: false,
         value: 42,
         resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),

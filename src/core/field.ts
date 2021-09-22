@@ -36,7 +36,6 @@ export type Validator<T> = (req: ValidationRequest<T>) => void;
 
 export type ValidationRequest<T> = Readonly<{
   id: string;
-  onetime: boolean;
   value: T;
   resolve: (error: unknown) => void;
   signal: AbortSignal;
