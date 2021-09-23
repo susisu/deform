@@ -586,13 +586,13 @@ export abstract class FieldImpl<T> implements Field<T> {
   }
 
   emit(event: string, data?: unknown): void {
+    this.emitChildren(event, data);
     const listenerSet = this.listeners.get(event);
     if (listenerSet) {
       for (const listener of [...listenerSet]) {
         listener(data);
       }
     }
-    this.emitChildren(event, data);
   }
 
   protected abstract emitChildren(event: string, data: unknown): void;
