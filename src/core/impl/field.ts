@@ -24,8 +24,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   private className: string;
   protected path: string;
 
-  protected parent: Parent<T> | undefined;
-  protected isConnected: boolean;
+  private parent: Parent<T> | undefined;
+  private isConnected: boolean;
 
   private defaultValue: T;
   private value: T;
