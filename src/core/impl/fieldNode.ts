@@ -1,10 +1,5 @@
-import {
-  ChildArrayKeyOf,
-  ChildFieldArray,
-  ChildFieldNode,
-  ChildKeyOf,
-  ElementType,
-} from "../field";
+import { ChildArrayKeyOf, ChildFieldArray, ChildFieldNode, ChildKeyOf } from "../field";
+import { ElementType } from "../shared";
 import { FieldImpl } from "./field";
 import { FieldArrayImpl } from "./fieldArray";
 import { Child, Getter, Parent, Setter } from "./shared";

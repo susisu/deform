@@ -1,4 +1,5 @@
-import { ChildFieldArray, ChildFieldNode, Disposable, FieldNode, FieldsSubscriber } from "../field";
+import { ChildFieldArray, ChildFieldNode, FieldNode, FieldsSubscriber } from "../field";
+import { Disposable } from "../shared";
 import { FieldImpl } from "./field";
 import { FieldNodeImpl } from "./fieldNode";
 import { Child, Getter, KeyMapper, Parent, Setter, uniqueId } from "./shared";

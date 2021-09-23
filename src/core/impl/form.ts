@@ -1,4 +1,4 @@
-import { Disposable, FieldNode } from "../field";
+import { FieldNode } from "../field";
 import {
   Form,
   FormState,
@@ -7,6 +7,7 @@ import {
   FormSubmitOptions,
   FormSubmitRequest,
 } from "../form";
+import { Disposable } from "../shared";
 import { FieldNodeImpl } from "./fieldNode";
 import { uniqueId } from "./shared";
 

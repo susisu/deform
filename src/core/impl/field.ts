@@ -1,7 +1,6 @@
+import { EventListener } from "../events";
 import {
-  Disposable,
   Errors,
-  EventListener,
   Field,
   Snapshot,
   Subscriber,
@@ -10,6 +9,7 @@ import {
   isEqualErrors,
   isValid,
 } from "../field";
+import { Disposable } from "../shared";
 import { Child, Getter, KeyMapper, Parent, uniqueId } from "./shared";
 
 export type FieldImplParams<T> = Readonly<{

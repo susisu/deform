@@ -1,14 +1,5 @@
-export type Disposable = () => void;
-
-export type ElementType<T extends readonly unknown[]> = T[number];
-
-export interface EventEmitter {
-  on(event: string, listener: EventListener): Disposable;
-  off(event: string, listener: EventListener): void;
-  emit(event: string, data?: unknown): void;
-}
-
-export type EventListener = (data: unknown) => void;
+import { EventEmitter } from "./events";
+import { Disposable, ElementType } from "./shared";
 
 export interface Field<T> extends EventEmitter {
   readonly id: string;
@@ -35,7 +26,6 @@ export type Snapshot<T> = Readonly<{
   errors: Errors;
   isPending: boolean;
 }>;
-
 export type Subscriber<T> = (snapshot: Snapshot<T>) => void;
 
 export type Errors = Readonly<{ [key in PropertyKey]: unknown }>;
@@ -43,7 +33,6 @@ export type Errors = Readonly<{ [key in PropertyKey]: unknown }>;
 export type SyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => E;
 export type AsyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => Promise<E>;
 export type Validator<T, E = unknown> = SyncValidator<T, E> | AsyncValidator<T, E>;
-
 export type ValidationRequest<T> = Readonly<{
   id: string;
   value: T;
@@ -80,7 +69,6 @@ export interface FieldNode<T> extends Field<T> {
 export interface ChildFieldNode<T> extends FieldNode<T>, ChildField {}
 
 export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
-
 type NonIndexKey<K extends PropertyKey> =
   // prettier-ignore
   string extends K ? never
@@ -89,7 +77,6 @@ type NonIndexKey<K extends PropertyKey> =
   : K;
 
 export type ChildArrayKeyOf<T> = SelectChildArrayKey<T, ChildKeyOf<T>>;
-
 type SelectChildArrayKey<T, K extends keyof T> =
   // prettier-ignore
   K extends unknown
