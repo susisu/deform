@@ -40,7 +40,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     this.fieldsSubscribers = new Set();
     this.isFieldsDispatchQueued = false;
 
-    const connect = this.sync(this.value);
+    const connect = this.sync(this.getValue());
     connect();
 
     this.isInitializing = false;
@@ -125,7 +125,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   append(value: T): void {
-    const newValue = append(this.value, value);
+    const newValue = append(this.getValue(), value);
     const [key, field] = this.createChild(value);
     const fields = append(this.fields, field);
     const keyByIndex = append(this.keyByIndex, key);
@@ -143,7 +143,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   prepend(value: T): void {
-    const newValue = prepend(this.value, value);
+    const newValue = prepend(this.getValue(), value);
     const [key, field] = this.createChild(value);
     const fields = prepend(this.fields, field);
     const keyByIndex = prepend(this.keyByIndex, key);
@@ -161,13 +161,13 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   insert(index: number, value: T): void {
-    if (index < 0 || index > this.value.length) {
+    if (index < 0 || index > this.getValue().length) {
       throw new Error(
         `FieldArray '${this.path}' failed to insert: index '${index}' is out of range`
       );
     }
 
-    const newValue = insert(this.value, index, value);
+    const newValue = insert(this.getValue(), index, value);
     const [key, field] = this.createChild(value);
     const fields = insert(this.fields, index, field);
     const keyByIndex = insert(this.keyByIndex, index, key);
@@ -185,7 +185,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   remove(index: number): void {
-    if (index < 0 || index > this.value.length) {
+    if (index < 0 || index > this.getValue().length) {
       throw new Error(
         `FieldArray '${this.path}' failed to remove: index '${index}' is out of range`
       );
@@ -194,7 +194,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
     const field = this.fields[index];
     field.disconnect();
 
-    const newValue = remove(this.value, index);
+    const newValue = remove(this.getValue(), index);
     const fields = remove(this.fields, index);
     const keyByIndex = remove(this.keyByIndex, index);
     const indexByKey = inverseMap(keyByIndex);
@@ -210,12 +210,12 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   move(fromIndex: number, toIndex: number): void {
-    if (fromIndex < 0 || fromIndex > this.value.length - 1) {
+    if (fromIndex < 0 || fromIndex > this.getValue().length - 1) {
       throw new Error(
         `FieldArray '${this.path}' failed to move: fromIndex '${fromIndex}' is out of range`
       );
     }
-    if (toIndex < 0 || toIndex > this.value.length - 1) {
+    if (toIndex < 0 || toIndex > this.getValue().length - 1) {
       throw new Error(
         `FieldArray '${this.path}' failed to move: toIndex '${toIndex}' is out of range`
       );
@@ -224,7 +224,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       return;
     }
 
-    const newValue = move(this.value, fromIndex, toIndex);
+    const newValue = move(this.getValue(), fromIndex, toIndex);
     const fields = move(this.fields, fromIndex, toIndex);
     const keyByIndex = move(this.keyByIndex, fromIndex, toIndex);
     const indexByKey = inverseMap(keyByIndex);
@@ -240,12 +240,12 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
   }
 
   swap(aIndex: number, bIndex: number): void {
-    if (aIndex < 0 || aIndex > this.value.length - 1) {
+    if (aIndex < 0 || aIndex > this.getValue().length - 1) {
       throw new Error(
         `FieldArray '${this.path}' failed to swap: aIndex '${aIndex}' is out of range`
       );
     }
-    if (bIndex < 0 || bIndex > this.value.length - 1) {
+    if (bIndex < 0 || bIndex > this.getValue().length - 1) {
       throw new Error(
         `FieldArray '${this.path}' failed to swap: bIndex '${bIndex}' is out of range`
       );
@@ -254,7 +254,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       return;
     }
 
-    const newValue = swap(this.value, aIndex, bIndex);
+    const newValue = swap(this.getValue(), aIndex, bIndex);
     const fields = swap(this.fields, aIndex, bIndex);
     const keyByIndex = swap(this.keyByIndex, aIndex, bIndex);
     const indexByKey = inverseMap(keyByIndex);
@@ -322,7 +322,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       },
       setValue: value => {
         if (this.children.get(key) === child) {
-          const newValue = setter(this.value, value);
+          const newValue = setter(this.getValue(), value);
           // expected to be always true
           if (newValue.length === this.current.length) {
             this.current = newValue;
@@ -377,7 +377,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
 
   protected updateChildrenValue(): void {
     for (const child of this.children.values()) {
-      child.setValue(this.value);
+      child.setValue(this.getValue());
     }
   }
 

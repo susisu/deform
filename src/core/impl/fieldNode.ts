@@ -36,8 +36,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
   createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]> {
     const path = `${this.path}.${String(key)}`;
     if (
-      Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||
-      Object.getPrototypeOf(this.value) !== Object.prototype
+      Object.getPrototypeOf(this.getDefaultValue()) !== Object.prototype ||
+      Object.getPrototypeOf(this.getValue()) !== Object.prototype
     ) {
       // eslint-disable-next-line no-console
       console.warn(
@@ -55,8 +55,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     const field: FieldNodeImpl<T[K]> = new FieldNodeImpl({
       path,
       parent: this.toParent(key, setter, () => field.toChild(getter)),
-      defaultValue: getter(this.defaultValue),
-      value: getter(this.value),
+      defaultValue: getter(this.getDefaultValue()),
+      value: getter(this.getValue()),
     });
     return field;
   }
@@ -64,8 +64,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
   createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>> {
     const path = `${this.path}.${String(key)}`;
     if (
-      Object.getPrototypeOf(this.defaultValue) !== Object.prototype ||
-      Object.getPrototypeOf(this.value) !== Object.prototype
+      Object.getPrototypeOf(this.getDefaultValue()) !== Object.prototype ||
+      Object.getPrototypeOf(this.getValue()) !== Object.prototype
     ) {
       // eslint-disable-next-line no-console
       console.warn(
@@ -73,8 +73,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       );
     }
     if (
-      Object.getPrototypeOf(this.defaultValue[key]) !== Array.prototype ||
-      Object.getPrototypeOf(this.value[key]) !== Array.prototype
+      Object.getPrototypeOf(this.getDefaultValue()[key]) !== Array.prototype ||
+      Object.getPrototypeOf(this.getValue()[key]) !== Array.prototype
     ) {
       // eslint-disable-next-line no-console
       console.warn(
@@ -93,8 +93,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     const fieldArray: FieldArrayImpl<E> = new FieldArrayImpl({
       path,
       parent: this.toParent(key, setter, () => fieldArray.toChild(getter)),
-      defaultValue: getter(this.defaultValue),
-      value: getter(this.value),
+      defaultValue: getter(this.getDefaultValue()),
+      value: getter(this.getValue()),
     });
     return fieldArray;
   }
@@ -121,12 +121,12 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       },
       setDefaultValue: defaultValue => {
         if (this.children.get(key) === child) {
-          this.setDefaultValue(setter(this.defaultValue, defaultValue));
+          this.setDefaultValue(setter(this.getDefaultValue(), defaultValue));
         }
       },
       setValue: value => {
         if (this.children.get(key) === child) {
-          this.setValue(setter(this.value, value));
+          this.setValue(setter(this.getValue(), value));
         }
       },
       setIsDirty: isDirty => {
@@ -157,8 +157,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       throw new Error(`FieldNode '${this.path}' already has a child '${String(key)}'`);
     }
     this.children.set(key, child);
-    child.setDefaultValue(this.defaultValue);
-    child.setValue(this.value);
+    child.setDefaultValue(this.getDefaultValue());
+    child.setValue(this.getValue());
   }
 
   private detachChild<K extends ChildKeyOf<T>>(key: K, child: Child<T>): void {
@@ -173,13 +173,13 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
 
   protected updateChildrenDefaultValue(): void {
     for (const child of this.children.values()) {
-      child.setDefaultValue(this.defaultValue);
+      child.setDefaultValue(this.getDefaultValue());
     }
   }
 
   protected updateChildrenValue(): void {
     for (const child of this.children.values()) {
-      child.setValue(this.value);
+      child.setValue(this.getValue());
     }
   }
 

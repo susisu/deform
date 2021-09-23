@@ -26,8 +26,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected parent: Parent<T> | undefined;
   protected isConnected: boolean;
 
-  protected defaultValue: T;
-  protected value: T;
+  private defaultValue: T;
+  private value: T;
   private isDirty: boolean;
   private isTouched: boolean;
 
@@ -228,6 +228,10 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.updateParentIsPending();
   }
 
+  protected getDefaultValue(): T {
+    return this.defaultValue;
+  }
+
   private bareSetDefaultValue(defaultValue: T): boolean {
     if (Object.is(this.defaultValue, defaultValue)) {
       return false;
@@ -241,6 +245,10 @@ export abstract class FieldImpl<T> implements Field<T> {
     if (this.bareSetDefaultValue(defaultValue)) {
       this.updateChildrenDefaultValue();
     }
+  }
+
+  protected getValue(): T {
+    return this.value;
   }
 
   private bareSetValue(value: T): boolean {
