@@ -392,6 +392,12 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       child.validate();
     }
   }
+
+  protected override emitChildren(event: string, data: unknown): void {
+    for (const child of this.children.values()) {
+      child.emit(event, data);
+    }
+  }
 }
 
 function inverseMap(keyByIndex: readonly string[]): ReadonlyMap<string, number> {

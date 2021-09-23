@@ -1726,4 +1726,96 @@ describe("FieldNodeImpl", () => {
       spy.mockRestore();
     });
   });
+
+  describe("#on", () => {
+    it("adds an event listener", () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const listener = jest.fn(() => {});
+      const off = field.on("foo", listener);
+
+      field.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      // can remove
+      off();
+      field.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#off", () => {
+    it("removes an event listener", () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const listener = jest.fn(() => {});
+      field.on("foo", listener);
+
+      field.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      field.off("foo", listener);
+      field.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#emit", () => {
+    it("emits an event to the listeners", () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      const listener = jest.fn(() => {});
+      field.on("foo", listener);
+
+      field.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      field.emit("foo", { test: "xxx" });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenLastCalledWith({ test: "xxx" });
+
+      field.emit("bar");
+      expect(listener).toHaveBeenCalledTimes(2);
+    });
+
+    it("emits an event to the children", () => {
+      const parent = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      const child = parent.createChild("x");
+      const disconnect = child.connect();
+      const listener = jest.fn(() => {});
+      child.on("foo", listener);
+
+      parent.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      parent.emit("foo", { test: "xxx" });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenLastCalledWith({ test: "xxx" });
+
+      parent.emit("bar");
+      expect(listener).toHaveBeenCalledTimes(2);
+
+      // do not emit after diconnected
+      disconnect();
+      parent.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(2);
+    });
+  });
 });

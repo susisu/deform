@@ -2,7 +2,15 @@ export type Disposable = () => void;
 
 export type ElementType<T extends readonly unknown[]> = T[number];
 
-export interface Field<T> {
+export interface EventEmitter {
+  on(event: string, listener: EventListener): Disposable;
+  off(event: string, listener: EventListener): void;
+  emit(event: string, data?: unknown): void;
+}
+
+export type EventListener = (data: unknown) => void;
+
+export interface Field<T> extends EventEmitter {
   readonly id: string;
   getSnapshot(): Snapshot<T>;
   subscribe(subscriber: Subscriber<T>): Disposable;

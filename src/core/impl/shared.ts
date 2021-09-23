@@ -27,6 +27,7 @@ export type Child<T> = Readonly<{
   setValue: (value: T) => void;
   reset: () => void;
   validate: () => void;
+  emit: (event: string, data: unknown) => void;
 }>;
 
 export type KeyMapper = (key: PropertyKey) => PropertyKey;

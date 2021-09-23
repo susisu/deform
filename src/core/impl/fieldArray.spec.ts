@@ -2649,4 +2649,97 @@ describe("FieldArrayImpl", () => {
       }).toThrowError("FieldArray '$root' failed to swap: bIndex '1' is out of range");
     });
   });
+
+  describe("#on", () => {
+    it("adds an event listener", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const listener = jest.fn(() => {});
+      const off = fieldArray.on("foo", listener);
+
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      // can remove
+      off();
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#off", () => {
+    it("removes an event listener", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const listener = jest.fn(() => {});
+      fieldArray.on("foo", listener);
+
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      fieldArray.off("foo", listener);
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("#emit", () => {
+    it("emits an event to the listeners", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const listener = jest.fn(() => {});
+      fieldArray.on("foo", listener);
+
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      fieldArray.emit("foo", { test: "xxx" });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenLastCalledWith({ test: "xxx" });
+
+      fieldArray.emit("bar");
+      expect(listener).toHaveBeenCalledTimes(2);
+    });
+
+    it("emits an event to the children", () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      const fields = fieldArray.getFields();
+      expect(fields).toHaveLength(1);
+      const field = fields[0];
+      const listener = jest.fn(() => {});
+      field.on("foo", listener);
+
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenLastCalledWith(undefined);
+
+      fieldArray.emit("foo", { test: "xxx" });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenLastCalledWith({ test: "xxx" });
+
+      fieldArray.emit("bar");
+      expect(listener).toHaveBeenCalledTimes(2);
+
+      // do not emit after diconnected
+      fieldArray.remove(0);
+      fieldArray.emit("foo");
+      expect(listener).toHaveBeenCalledTimes(2);
+    });
+  });
 });

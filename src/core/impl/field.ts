@@ -1,6 +1,7 @@
 import {
   Disposable,
   Errors,
+  EventListener,
   Field,
   Snapshot,
   Subscriber,
@@ -47,6 +48,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   private subscribers: Set<Subscriber<T>>;
   private isDispatchQueued: boolean;
 
+  private listeners: Map<string, Set<EventListener>>;
+
   protected isInitializing: boolean;
 
   constructor(params: FieldImplParams<T>) {
@@ -86,6 +89,8 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
     this.subscribers = new Set();
     this.isDispatchQueued = false;
+
+    this.listeners = new Map();
   }
 
   // depends on: defaultValue
@@ -514,6 +519,9 @@ export abstract class FieldImpl<T> implements Field<T> {
       validate: () => {
         this.validate();
       },
+      emit: (event, data) => {
+        this.emit(event, data);
+      },
     };
   }
 
@@ -557,6 +565,37 @@ export abstract class FieldImpl<T> implements Field<T> {
   protected abstract updateChildrenValue(): void;
   protected abstract resetChildren(): void;
   protected abstract validateChildren(): void;
+
+  on(event: string, listener: EventListener): Disposable {
+    let listenerSet = this.listeners.get(event);
+    if (!listenerSet) {
+      listenerSet = new Set();
+      this.listeners.set(event, listenerSet);
+    }
+    listenerSet.add(listener);
+    return () => {
+      this.off(event, listener);
+    };
+  }
+
+  off(event: string, listener: EventListener): void {
+    const listenerSet = this.listeners.get(event);
+    if (listenerSet) {
+      listenerSet.delete(listener);
+    }
+  }
+
+  emit(event: string, data?: unknown): void {
+    const listenerSet = this.listeners.get(event);
+    if (listenerSet) {
+      for (const listener of [...listenerSet]) {
+        listener(data);
+      }
+    }
+    this.emitChildren(event, data);
+  }
+
+  protected abstract emitChildren(event: string, data: unknown): void;
 }
 
 type PendingValidation = Readonly<{ requestId: string; controller: AbortController }>;

@@ -194,4 +194,10 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
       child.validate();
     }
   }
+
+  protected override emitChildren(event: string, data: unknown): void {
+    for (const child of this.children.values()) {
+      child.emit(event, data);
+    }
+  }
 }
