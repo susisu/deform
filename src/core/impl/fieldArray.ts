@@ -104,10 +104,14 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       return;
     }
     this.isFieldsDispatchQueued = true;
-
     window.queueMicrotask(() => {
-      this.isFieldsDispatchQueued = false;
+      this.flushFieldsDispatchQueue();
+    });
+  }
 
+  private flushFieldsDispatchQueue(): void {
+    if (this.isFieldsDispatchQueued) {
+      this.isFieldsDispatchQueued = false;
       const fields = this.fields;
       for (const subscriber of [...this.fieldsSubscribers]) {
         try {
@@ -117,7 +121,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
           console.error(err);
         }
       }
-    });
+    }
   }
 
   append(value: T): void {
