@@ -1,4 +1,6 @@
+import { triplet } from "@susisu/promise-utils";
 import { act, renderHook } from "@testing-library/react-hooks";
+import { waitForMicrotasks } from "../__tests__/utils";
 import {
   ValidationRequest,
   createField,
@@ -240,7 +242,8 @@ describe("useValidator", () => {
       isPending: false,
     });
 
-    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const [promise, resolve] = triplet<unknown>();
+    const validator = jest.fn((_: ValidationRequest<number>) => promise);
     const t = renderHook(() => useValidator(field, "foo", validator));
     expect(validator).toHaveBeenCalledTimes(1);
     const req = validator.mock.calls[0][0];
@@ -254,7 +257,8 @@ describe("useValidator", () => {
       isPending: true,
     });
 
-    req.resolve(true);
+    resolve(true);
+    await waitForMicrotasks();
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,
@@ -289,13 +293,14 @@ describe("useValidator", () => {
       isPending: false,
     });
 
-    const validator = jest.fn((_: ValidationRequest<number>) => {});
+    const [promise, resolve] = triplet<unknown>();
+    const validator = jest.fn((_: ValidationRequest<number>) => promise);
     const t = renderHook(({ enabled }) => useValidator(field, "foo", validator, enabled), {
       initialProps: { enabled: true },
     });
     expect(validator).toHaveBeenCalledTimes(1);
-    const req = validator.mock.calls[0][0];
-    req.resolve(true);
+    resolve(true);
+    await waitForMicrotasks();
     expect(field.getSnapshot()).toEqual({
       defaultValue: 0,
       value: 42,

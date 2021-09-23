@@ -1,3 +1,4 @@
+import { triplet } from "@susisu/promise-utils";
 import { waitForMicrotasks } from "../../__tests__/utils";
 import { ValidationRequest, Validator } from "../field";
 import { FieldNodeImpl } from "./fieldNode";
@@ -422,10 +423,7 @@ describe("FieldNodeImpl", () => {
         defaultValue: 0,
         value: 42,
       });
-      const validator: Validator<number> = ({ resolve }) => {
-        resolve(true);
-      };
-      field.addValidator("foo", validator);
+      field.addValidator("foo", () => true);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
       const subscriber = jest.fn(() => {});
@@ -501,12 +499,16 @@ describe("FieldNodeImpl", () => {
       field.setDirty();
       field.setTouched();
       field.setCustomErrors({ foo: true });
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("bar", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: 1 }));
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 1,
@@ -518,6 +520,9 @@ describe("FieldNodeImpl", () => {
 
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       field.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -544,7 +549,8 @@ describe("FieldNodeImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
@@ -553,9 +559,6 @@ describe("FieldNodeImpl", () => {
         errors: { bar: false },
         isPending: false,
       });
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith({
         defaultValue: 0,
@@ -567,18 +570,22 @@ describe("FieldNodeImpl", () => {
       });
     });
 
-    it("triggers validation even if the value is already default", () => {
+    it("triggers validation even if the value is already default", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
         value: 0,
       });
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: 0 }));
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
@@ -587,6 +594,9 @@ describe("FieldNodeImpl", () => {
         errors: { foo: true },
         isPending: false,
       });
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       field.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -601,7 +611,8 @@ describe("FieldNodeImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 0,
@@ -622,10 +633,7 @@ describe("FieldNodeImpl", () => {
       field.setDirty();
       field.setTouched();
       field.setCustomErrors({ foo: true });
-      const validator: Validator<number> = ({ resolve }) => {
-        resolve(true);
-      };
-      field.addValidator("bar", validator);
+      field.addValidator("bar", () => true);
       expect(field.getSnapshot()).toEqual({
         defaultValue: 0,
         value: 1,
@@ -646,7 +654,7 @@ describe("FieldNodeImpl", () => {
       });
     });
 
-    it("resets the children", () => {
+    it("resets the children", async () => {
       const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
@@ -658,12 +666,16 @@ describe("FieldNodeImpl", () => {
       child.setDirty();
       child.setTouched();
       child.setCustomErrors({ foo: true });
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       child.addValidator("bar", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: 2 }));
-      request1.resolve({});
+      resolve1({});
+      await waitForMicrotasks();
       expect(parent.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 2, y: 43 },
@@ -680,6 +692,9 @@ describe("FieldNodeImpl", () => {
         errors: { foo: true, bar: {} },
         isPending: false,
       });
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       parent.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -702,7 +717,8 @@ describe("FieldNodeImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(null);
+      resolve2(null);
+      await waitForMicrotasks();
       expect(parent.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 0, y: 1 },
@@ -736,14 +752,16 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       const removeValidator = field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
@@ -755,17 +773,18 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       // creates a new validation request when 'value' is changed
       field.setValue(1);
@@ -774,7 +793,6 @@ describe("FieldNodeImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 1,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -789,13 +807,11 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(3);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(4);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
@@ -828,7 +844,10 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
@@ -847,6 +866,9 @@ describe("FieldNodeImpl", () => {
 
       expect(onAbort).toHaveBeenCalledTimes(0);
 
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
+
       // creates a new validation request when 'value' is changed
       field.setValue(1);
       expect(validator).toHaveBeenCalledTimes(2);
@@ -862,26 +884,22 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(2);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(3);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
 
       // resolving an aborted request has no effect
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(3);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
@@ -899,10 +917,7 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       parent.subscribe(subscriber);
 
-      const validator: Validator<{ x: number; y: number }> = ({ resolve }) => {
-        resolve(false);
-      };
-      const removeValidator = parent.addValidator("x", validator);
+      const removeValidator = parent.addValidator("x", () => false);
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ errors: { x: false } }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -935,6 +950,78 @@ describe("FieldNodeImpl", () => {
         field.addValidator("foo", () => {});
       }).toThrowError("FieldNode '$root' already has a validator 'foo'");
     });
+
+    it("logs error to the console if the validation is rejected", async () => {
+      const spy = jest.spyOn(console, "error");
+      spy.mockImplementation(() => {});
+
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      const [promise, , reject] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: 42 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      const err = new Error("unexpected error");
+      reject(err);
+      await waitForMicrotasks();
+      expect(spy).toHaveBeenLastCalledWith(err);
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+
+      spy.mockRestore();
+    });
+
+    it("ignores error if the validation is rejected but already aborted", async () => {
+      const spy = jest.spyOn(console, "error");
+      spy.mockImplementation(() => {});
+
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      let promise: Promise<unknown>;
+      const [promise1, , reject1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: 42 }));
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      const [promise2] = triplet<unknown>();
+      promise = promise2;
+
+      field.setValue(1);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: 1 }));
+
+      const err = new Error("unexpected error");
+      reject1(err);
+      await waitForMicrotasks();
+      expect(spy).not.toHaveBeenCalledWith(err);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      spy.mockRestore();
+    });
   });
 
   describe("#removeValidator", () => {
@@ -951,7 +1038,8 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
@@ -965,13 +1053,11 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: {}, isPending: true })
       );
 
-      request.resolve(true);
+      resolve(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
@@ -1003,7 +1089,8 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
@@ -1035,7 +1122,8 @@ describe("FieldNodeImpl", () => {
       );
 
       // resolving an aborted request has no effect
-      request.resolve(true);
+      resolve(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: {}, isPending: false })
       );
@@ -1056,9 +1144,7 @@ describe("FieldNodeImpl", () => {
       const subscriber = jest.fn(() => {});
       field.subscribe(subscriber);
 
-      const validator: Validator<number> = ({ resolve }) => {
-        resolve(true);
-      };
+      const validator: Validator<number> = () => true;
       field.addValidator("foo", validator);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: true } }));
 
@@ -1077,9 +1163,7 @@ describe("FieldNodeImpl", () => {
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(expect.objectContaining({ errors: {} }));
 
-      field.addValidator("foo", ({ resolve }) => {
-        resolve(false);
-      });
+      field.addValidator("foo", () => false);
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: { foo: false } }));
 
       expect(subscriber).toHaveBeenCalledTimes(2);
@@ -1099,7 +1183,7 @@ describe("FieldNodeImpl", () => {
   });
 
   describe("#validate", () => {
-    it("triggers validation", () => {
+    it("triggers validation", async () => {
       const field = new FieldNodeImpl({
         path: "$root",
         defaultValue: 0,
@@ -1109,22 +1193,28 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: {}, isPending: false })
       );
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: true }, isPending: false })
       );
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       field.validate();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -1132,7 +1222,6 @@ describe("FieldNodeImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -1140,13 +1229,14 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: true }, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(field.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { foo: false }, isPending: false })
       );
     });
 
-    it("triggers validation of the children", () => {
+    it("triggers validation of the children", async () => {
       const parent = new FieldNodeImpl({
         path: "$root",
         defaultValue: { x: 0, y: 1 },
@@ -1161,14 +1251,16 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: {}, isPending: false })
       );
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       child.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(parent.getSnapshot()).toEqual(
@@ -1176,7 +1268,8 @@ describe("FieldNodeImpl", () => {
       );
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
-      request1.resolve({});
+      resolve1({});
+      await waitForMicrotasks();
       expect(parent.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { x: true }, isPending: false })
       );
@@ -1184,13 +1277,15 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
+
       parent.validate();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -1201,7 +1296,8 @@ describe("FieldNodeImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: true })
       );
 
-      request2.resolve(null);
+      resolve2(null);
+      await waitForMicrotasks();
       expect(parent.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { x: false }, isPending: false })
       );
@@ -1539,7 +1635,7 @@ describe("FieldNodeImpl", () => {
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
 
-      child.addValidator("foo", () => {});
+      child.addValidator("foo", () => new Promise(() => {}));
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
 
@@ -1560,7 +1656,7 @@ describe("FieldNodeImpl", () => {
       });
       const child = parent.createChild("x");
       const disconnect = child.connect();
-      parent.addValidator("foo", () => {});
+      parent.addValidator("foo", () => new Promise(() => {}));
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
 

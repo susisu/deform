@@ -40,12 +40,13 @@ export type Subscriber<T> = (snapshot: Snapshot<T>) => void;
 
 export type Errors = Readonly<{ [key in PropertyKey]: unknown }>;
 
-export type Validator<T> = (req: ValidationRequest<T>) => void;
+export type SyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => E;
+export type AsyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => Promise<E>;
+export type Validator<T, E = unknown> = SyncValidator<T, E> | AsyncValidator<T, E>;
 
 export type ValidationRequest<T> = Readonly<{
   id: string;
   value: T;
-  resolve: (error: unknown) => void;
   signal: AbortSignal;
 }>;
 

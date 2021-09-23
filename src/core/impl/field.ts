@@ -5,6 +5,7 @@ import {
   Field,
   Snapshot,
   Subscriber,
+  ValidationRequest,
   Validator,
   isEqualErrors,
   isValid,
@@ -35,7 +36,7 @@ export abstract class FieldImpl<T> implements Field<T> {
   private validationErrors: Errors;
   private customErrors: Errors;
 
-  private validators: Map<string, Validator<T>>;
+  private validators: Map<string, Validator<T, unknown>>;
   private pendingValidations: Map<string, PendingValidation>;
 
   private dirtyChildKeys: Set<PropertyKey>;
@@ -341,7 +342,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     this.runAllValidators();
   }
 
-  addValidator(key: string, validator: Validator<T>): Disposable {
+  addValidator(key: string, validator: Validator<T, unknown>): Disposable {
     if (this.validators.has(key)) {
       throw new Error(`${this.className} '${this.path}' already has a validator '${key}'`);
     }
@@ -352,7 +353,7 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
   }
 
-  removeValidator(key: string, validator: Validator<T>): void {
+  removeValidator(key: string, validator: Validator<T, unknown>): void {
     if (this.validators.get(key) === validator) {
       this.abortPendingValidation(key);
 
@@ -375,21 +376,38 @@ export abstract class FieldImpl<T> implements Field<T> {
 
     this.abortPendingValidation(key);
 
-    const requestId = `ValidationRequest/${uniqueId()}`;
     const controller = new window.AbortController();
-    this.pendingValidations.set(key, { requestId, controller });
+
+    const request: ValidationRequest<T> = {
+      id: `ValidationRequest/${uniqueId()}`,
+      value: this.value,
+      signal: controller.signal,
+    };
+
+    this.pendingValidations.set(key, { requestId: request.id, controller });
     this.updateSnapshotIsPending();
 
-    validator({
-      id: requestId,
-      value: this.value,
-      resolve: error => {
-        if (!controller.signal.aborted) {
-          this.resolveValidation(key, requestId, error);
+    const errorOrPromise = validator(request);
+    if (errorOrPromise instanceof Promise) {
+      errorOrPromise.then(
+        error => {
+          if (!controller.signal.aborted) {
+            this.resolveValidation(key, request.id, error);
+          }
+        },
+        err => {
+          if (!controller.signal.aborted) {
+            // eslint-disable-next-line no-console
+            console.error(err);
+            this.resolveValidation(key, request.id, true);
+          }
         }
-      },
-      signal: controller.signal,
-    });
+      );
+    } else {
+      if (!controller.signal.aborted) {
+        this.resolveValidation(key, request.id, errorOrPromise);
+      }
+    }
   }
 
   private abortPendingValidation(key: string): void {

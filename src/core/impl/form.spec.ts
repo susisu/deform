@@ -355,9 +355,7 @@ describe("FormImpl", () => {
       form.root.setDirty();
       form.root.setTouched();
       form.root.setCustomErrors({ foo: true });
-      form.root.addValidator("bar", ({ resolve }) => {
-        resolve(true);
-      });
+      form.root.addValidator("bar", () => true);
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },
@@ -386,9 +384,7 @@ describe("FormImpl", () => {
       form.root.setDirty();
       form.root.setTouched();
       form.root.setCustomErrors({ foo: true });
-      form.root.addValidator("bar", ({ resolve }) => {
-        resolve(true);
-      });
+      form.root.addValidator("bar", () => true);
       expect(form.root.getSnapshot()).toEqual({
         defaultValue: { x: 0, y: 1 },
         value: { x: 42, y: 43 },

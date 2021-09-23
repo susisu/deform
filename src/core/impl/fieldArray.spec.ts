@@ -1,3 +1,4 @@
+import { triplet } from "@susisu/promise-utils";
 import { waitForMicrotasks } from "../../__tests__/utils";
 import { FieldNode, ValidationRequest, Validator } from "../field";
 import { FieldArrayImpl } from "./fieldArray";
@@ -773,10 +774,7 @@ describe("FieldArrayImpl", () => {
         defaultValue: [0],
         value: [42],
       });
-      const validator: Validator<readonly number[]> = ({ resolve }) => {
-        resolve(true);
-      };
-      fieldArray.addValidator("foo", validator);
+      fieldArray.addValidator("foo", () => true);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: true } })
       );
@@ -853,12 +851,16 @@ describe("FieldArrayImpl", () => {
       fieldArray.setDirty();
       fieldArray.setTouched();
       fieldArray.setCustomErrors({ foo: true });
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("bar", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: [1, 2] }));
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 2],
@@ -870,6 +872,9 @@ describe("FieldArrayImpl", () => {
 
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       fieldArray.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -896,7 +901,8 @@ describe("FieldArrayImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
@@ -905,9 +911,6 @@ describe("FieldArrayImpl", () => {
         errors: { 0: false, bar: false },
         isPending: false,
       });
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith({
         defaultValue: [0],
@@ -919,19 +922,23 @@ describe("FieldArrayImpl", () => {
       });
     });
 
-    it("triggers validation even if the value is already default", () => {
+    it("triggers validation even if the value is already default", async () => {
       const defaultValue = [0];
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue,
         value: defaultValue,
       });
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: [0] }));
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
@@ -940,6 +947,9 @@ describe("FieldArrayImpl", () => {
         errors: { 0: false, foo: true },
         isPending: false,
       });
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       fieldArray.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -954,7 +964,8 @@ describe("FieldArrayImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
@@ -975,10 +986,7 @@ describe("FieldArrayImpl", () => {
       fieldArray.setDirty();
       fieldArray.setTouched();
       fieldArray.setCustomErrors({ foo: true });
-      const validator: Validator<readonly number[]> = ({ resolve }) => {
-        resolve(true);
-      };
-      fieldArray.addValidator("bar", validator);
+      fieldArray.addValidator("bar", () => true);
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1, 2],
@@ -1002,7 +1010,7 @@ describe("FieldArrayImpl", () => {
       });
     });
 
-    it("recreates the child fields", () => {
+    it("recreates the child fields", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -1015,12 +1023,14 @@ describe("FieldArrayImpl", () => {
       field1.setDirty();
       field1.setTouched();
       field1.setCustomErrors({ foo: true });
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field1.addValidator("bar", validator);
       expect(validator).toHaveBeenCalledTimes(1);
-      const request1 = validator.mock.calls[0][0];
-      expect(request1).toEqual(expect.objectContaining({ value: 1 }));
-      request1.resolve({});
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: 1 }));
+      resolve({});
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [1],
@@ -1065,7 +1075,7 @@ describe("FieldArrayImpl", () => {
       });
     });
 
-    it("does not recreate the child fields if the value is already default", () => {
+    it("does not recreate the child fields if the value is already default", async () => {
       const defalutValue = [0];
       const fieldArray = new FieldArrayImpl({
         path: "$root",
@@ -1078,12 +1088,16 @@ describe("FieldArrayImpl", () => {
       field.setDirty();
       field.setTouched();
       field.setCustomErrors({ foo: true });
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("bar", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual(expect.objectContaining({ value: 0 }));
-      request1.resolve({});
+      resolve1({});
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
@@ -1100,6 +1114,9 @@ describe("FieldArrayImpl", () => {
         errors: { foo: true, bar: {} },
         isPending: false,
       });
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       fieldArray.reset();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -1122,7 +1139,8 @@ describe("FieldArrayImpl", () => {
         isPending: true,
       });
 
-      request2.resolve(null);
+      resolve2(null);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual({
         defaultValue: [0],
         value: [0],
@@ -1156,14 +1174,16 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       const removeValidator = fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
@@ -1177,17 +1197,18 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false }, isPending: true })
       );
 
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       // creates a new validation request when 'value' is changed
       fieldArray.setValue([1, 2]);
@@ -1196,7 +1217,6 @@ describe("FieldArrayImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [1, 2],
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -1211,13 +1231,11 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false, 1: false, foo: true }, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(3);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(4);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
@@ -1250,7 +1268,10 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
@@ -1271,6 +1292,9 @@ describe("FieldArrayImpl", () => {
 
       expect(onAbort).toHaveBeenCalledTimes(0);
 
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
+
       // creates a new validation request when 'value' is changed
       fieldArray.setValue([1, 2]);
       expect(validator).toHaveBeenCalledTimes(2);
@@ -1288,26 +1312,22 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false, 1: false }, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(2);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(3);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
       );
 
       // resolving an aborted request has no effect
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, 1: false, foo: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(3);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(3);
     });
 
@@ -1326,10 +1346,7 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator: Validator<readonly number[]> = ({ resolve }) => {
-        resolve(false);
-      };
-      const removeValidator = fieldArray.addValidator("0", validator);
+      const removeValidator = fieldArray.addValidator("0", () => false);
       expect(fieldArray.getSnapshot()).toEqual(expect.objectContaining({ errors: { 0: false } }));
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -1362,6 +1379,84 @@ describe("FieldArrayImpl", () => {
         fieldArray.addValidator("foo", () => {});
       }).toThrowError("FieldArray '$root' already has a validator 'foo'");
     });
+
+    it("logs error to the console if the validation is rejected", async () => {
+      const spy = jest.spyOn(console, "error");
+      spy.mockImplementation(() => {});
+
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      const [promise, , reject] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      const err = new Error("unexpected error");
+      reject(err);
+      await waitForMicrotasks();
+      expect(spy).toHaveBeenLastCalledWith(err);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
+      );
+
+      spy.mockRestore();
+    });
+
+    it("ignores error if the validation is rejected but already aborted", async () => {
+      const spy = jest.spyOn(console, "error");
+      spy.mockImplementation(() => {});
+
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      let promise: Promise<unknown>;
+      const [promise1, , reject1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      const request = validator.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: [42] }));
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      const [promise2] = triplet<unknown>();
+      promise = promise2;
+
+      fieldArray.setValue([1]);
+      expect(validator).toHaveBeenCalledTimes(2);
+      const request2 = validator.mock.calls[1][0];
+      expect(request2).toEqual(expect.objectContaining({ value: [1] }));
+
+      const err = new Error("unexpected error");
+      reject1(err);
+      await waitForMicrotasks();
+      expect(spy).not.toHaveBeenCalledWith(err);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      spy.mockRestore();
+    });
   });
 
   describe("#removeValidator", () => {
@@ -1378,7 +1473,8 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
@@ -1394,13 +1490,11 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false }, isPending: true })
       );
 
-      request.resolve(true);
+      resolve(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(1);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
       expect(subscriber).toHaveBeenLastCalledWith(
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
@@ -1432,7 +1526,8 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request = validator.mock.calls[0][0];
@@ -1466,13 +1561,11 @@ describe("FieldArrayImpl", () => {
       );
 
       // resolving an aborted request has no effect
-      request.resolve(true);
+      resolve(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: false })
       );
-
-      expect(subscriber).toHaveBeenCalledTimes(2);
-      await waitForMicrotasks();
       expect(subscriber).toHaveBeenCalledTimes(2);
     });
 
@@ -1487,9 +1580,7 @@ describe("FieldArrayImpl", () => {
       const subscriber = jest.fn(() => {});
       fieldArray.subscribe(subscriber);
 
-      const validator: Validator<readonly number[]> = ({ resolve }) => {
-        resolve(true);
-      };
+      const validator: Validator<readonly number[]> = () => true;
       fieldArray.addValidator("foo", validator);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: true } })
@@ -1512,9 +1603,7 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false } })
       );
 
-      fieldArray.addValidator("foo", ({ resolve }) => {
-        resolve(false);
-      });
+      fieldArray.addValidator("foo", () => false);
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: false } })
       );
@@ -1538,7 +1627,7 @@ describe("FieldArrayImpl", () => {
   });
 
   describe("#validate", () => {
-    it("triggers validation", () => {
+    it("triggers validation", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -1548,24 +1637,30 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false }, isPending: false })
       );
 
-      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
       fieldArray.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: true })
       );
 
-      request1.resolve(true);
+      resolve1(true);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
       );
+
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
 
       fieldArray.validate();
       expect(validator).toHaveBeenCalledTimes(2);
@@ -1573,7 +1668,6 @@ describe("FieldArrayImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -1581,13 +1675,14 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { 0: false, foo: true }, isPending: true })
       );
 
-      request2.resolve(false);
+      resolve2(false);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false, foo: false }, isPending: false })
       );
     });
 
-    it("triggers validation of the child fields", () => {
+    it("triggers validation of the child fields", async () => {
       const fieldArray = new FieldArrayImpl({
         path: "$root",
         defaultValue: [0],
@@ -1603,14 +1698,16 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: {}, isPending: false })
       );
 
-      const validator = jest.fn((_: ValidationRequest<number>) => {});
+      let promise: Promise<unknown>;
+      const [promise1, resolve1] = triplet<unknown>();
+      promise = promise1;
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
       field.addValidator("foo", validator);
       expect(validator).toHaveBeenCalledTimes(1);
       const request1 = validator.mock.calls[0][0];
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
@@ -1618,7 +1715,8 @@ describe("FieldArrayImpl", () => {
       );
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
-      request1.resolve({});
+      resolve1({});
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: true }, isPending: false })
       );
@@ -1626,13 +1724,15 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: false })
       );
 
+      const [promise2, resolve2] = triplet<unknown>();
+      promise = promise2;
+
       fieldArray.validate();
       expect(validator).toHaveBeenCalledTimes(2);
       const request2 = validator.mock.calls[1][0];
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        resolve: expect.any(Function),
         signal: expect.any(window.AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
@@ -1643,7 +1743,8 @@ describe("FieldArrayImpl", () => {
         expect.objectContaining({ errors: { foo: {} }, isPending: true })
       );
 
-      request2.resolve(null);
+      resolve2(null);
+      await waitForMicrotasks();
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: false })
       );
@@ -1987,7 +2088,7 @@ describe("FieldArrayImpl", () => {
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
 
-      child.addValidator("foo", () => {});
+      child.addValidator("foo", () => new Promise(() => {}));
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
 
@@ -2008,7 +2109,7 @@ describe("FieldArrayImpl", () => {
       });
       const child = parent.createChildArray("x");
       const disconnect = child.connect();
-      parent.addValidator("foo", () => {});
+      parent.addValidator("foo", () => new Promise(() => {}));
       expect(parent.getSnapshot()).toEqual(expect.objectContaining({ isPending: true }));
       expect(child.getSnapshot()).toEqual(expect.objectContaining({ isPending: false }));
 

@@ -1,5 +1,12 @@
 import { Disposable, FieldNode } from "../field";
-import { Form, FormState, FormStateSubscriber, FormSubmitAction, FormSubmitOptions } from "../form";
+import {
+  Form,
+  FormState,
+  FormStateSubscriber,
+  FormSubmitAction,
+  FormSubmitOptions,
+  FormSubmitRequest,
+} from "../form";
 import { FieldNodeImpl } from "./fieldNode";
 import { uniqueId } from "./shared";
 
@@ -116,10 +123,13 @@ export class FormImpl<T> implements Form<T> {
       });
     }
 
-    const id = `FormSubmitRequest/${uniqueId()}`;
-    const { value } = this.root.getSnapshot();
+    const request: FormSubmitRequest<T> = {
+      id: `FormSubmitRequest/${uniqueId()}`,
+      value: this.root.getSnapshot().value,
+      signal: controller.signal,
+    };
 
-    this.pendingRequestIds.add(id);
+    this.pendingRequestIds.add(request.id);
     this.updateStateIsSubmitting();
     this.submitCount += 1;
     this.updateStateSubmitCount();
@@ -132,7 +142,7 @@ export class FormImpl<T> implements Form<T> {
       controller.signal.addEventListener("abort", () => {
         reject(new Error("Aborted"));
       });
-      action({ id, value, signal: controller.signal }).then(
+      action(request).then(
         () => {
           resolve();
         },
@@ -142,7 +152,7 @@ export class FormImpl<T> implements Form<T> {
         }
       );
     }).finally(() => {
-      this.pendingRequestIds.delete(id);
+      this.pendingRequestIds.delete(request.id);
       this.updateStateIsSubmitting();
     });
   }

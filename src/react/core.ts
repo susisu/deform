@@ -94,7 +94,7 @@ export function useFields<T>(fieldArray: FieldArray<T>): ReadonlyArray<FieldNode
 export function useValidator<T>(
   field: Field<T>,
   key: string,
-  validator: Validator<T>,
+  validator: Validator<T, unknown>,
   enabled: boolean = true
 ): void {
   useEffect(() => {
