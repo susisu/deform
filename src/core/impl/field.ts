@@ -608,7 +608,12 @@ export abstract class FieldImpl<T> implements Field<T> {
     const listenerSet = this.listeners.get(event);
     if (listenerSet) {
       for (const listener of [...listenerSet]) {
-        listener(data);
+        try {
+          listener(data);
+        } catch (err: unknown) {
+          // eslint-disable-next-line no-console
+          console.error(err);
+        }
       }
     }
   }
