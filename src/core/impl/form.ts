@@ -144,11 +144,17 @@ export class FormImpl<T> implements Form<T> {
         this.root.emit("submit");
         if (!skipValidation) {
           while (this.root.getSnapshot().isPending) {
+            if (controller.signal.aborted) {
+              throw new Error(`Request '${requestId}' has been aborted`);
+            }
             await this.root.waitForValidation();
           }
           if (!isValid(this.root.getSnapshot().errors)) {
             return { type: "canceled", reason: "validationError" };
           }
+        }
+        if (controller.signal.aborted) {
+          throw new Error(`Request '${requestId}' has been aborted`);
         }
         const data = await action({
           id: requestId,

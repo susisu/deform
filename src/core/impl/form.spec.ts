@@ -359,12 +359,9 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
       expect(listener).toHaveBeenCalled();
-      expect(action).toHaveBeenCalledTimes(1);
-      const request = action.mock.calls[0][0];
-      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
-      expect(request.signal.aborted).toBe(true);
 
       await expect(done).resolves.toEqual({ type: "canceled", reason: "aborted" });
+      expect(action).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
