@@ -5,7 +5,6 @@ import {
   FormStateSubscriber,
   FormSubmitAction,
   FormSubmitOptions,
-  FormSubmitRequest,
   FormSubmitResult,
 } from "../form";
 import { Disposable } from "../shared";
@@ -113,63 +112,53 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  async submit<R>(
+  submit<R>(
     action: FormSubmitAction<T, R>,
     options?: FormSubmitOptions
   ): Promise<FormSubmitResult<R>> {
     const skipValidation = options?.skipValidation ?? false;
     const signal = options?.signal;
 
-    this.root.emit("submit");
-
-    if (!skipValidation) {
-      while (this.root.getSnapshot().isPending) {
-        await this.root.waitForValidation();
-      }
-      if (!isValid(this.root.getSnapshot().errors)) {
-        return { type: "canceled", reason: "validationError" };
-      }
-    }
-
+    const requestId = `FormSubmitRequest/${uniqueId()}`;
     const controller = new AbortController();
-    if (signal) {
-      if (signal.aborted) {
-        controller.abort();
-      }
-      signal.addEventListener("abort", () => {
-        controller.abort();
-      });
-    }
 
-    const request: FormSubmitRequest<T> = {
-      id: `FormSubmitRequest/${uniqueId()}`,
-      value: this.root.getSnapshot().value,
-      signal: controller.signal,
-    };
-
-    this.pendingRequestIds.add(request.id);
+    this.pendingRequestIds.add(requestId);
     this.updateStateIsSubmitting();
     this.submitCount += 1;
     this.updateStateSubmitCount();
 
-    return new Promise<FormSubmitResult<R>>((resolve, reject) => {
-      if (controller.signal.aborted) {
-        resolve({ type: "canceled", reason: "aborted" });
-        return;
-      }
-      controller.signal.addEventListener("abort", () => {
-        resolve({ type: "canceled", reason: "aborted" });
-      });
-      action(request).then(
-        data => {
-          resolve({ type: "success", data });
-        },
-        (err: unknown) => {
-          reject(err);
+    return Promise.race([
+      new Promise<FormSubmitResult<R>>(resolve => {
+        if (signal) {
+          if (signal.aborted) {
+            resolve({ type: "canceled", reason: "aborted" });
+            controller.abort();
+          }
+          signal.addEventListener("abort", () => {
+            resolve({ type: "canceled", reason: "aborted" });
+            controller.abort();
+          });
         }
-      );
-    }).finally(() => {
-      this.pendingRequestIds.delete(request.id);
+      }),
+      (async (): Promise<FormSubmitResult<R>> => {
+        this.root.emit("submit");
+        if (!skipValidation) {
+          while (this.root.getSnapshot().isPending) {
+            await this.root.waitForValidation();
+          }
+          if (!isValid(this.root.getSnapshot().errors)) {
+            return { type: "canceled", reason: "validationError" };
+          }
+        }
+        const data = await action({
+          id: requestId,
+          value: this.root.getSnapshot().value,
+          signal: controller.signal,
+        });
+        return { type: "success", data };
+      })(),
+    ]).finally(() => {
+      this.pendingRequestIds.delete(requestId);
       this.updateStateIsSubmitting();
     });
   }

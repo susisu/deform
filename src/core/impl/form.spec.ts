@@ -239,8 +239,8 @@ describe("FormImpl", () => {
       const action = jest.fn(async () => "xxx");
       const done = form.submit(action);
       expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 0,
+        isSubmitting: true,
+        submitCount: 1,
       });
       expect(listener).toHaveBeenCalled();
 
@@ -248,7 +248,7 @@ describe("FormImpl", () => {
       expect(action).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
-        submitCount: 0,
+        submitCount: 1,
       });
     });
 
@@ -273,17 +273,17 @@ describe("FormImpl", () => {
       );
       const done = form.submit(action);
       expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 0,
+        isSubmitting: true,
+        submitCount: 1,
       });
       expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(0);
 
-      // not submitted yet
+      // waiting for pending validation; action is not called yet
       await waitForMicrotasks();
       expect(form.getState()).toEqual({
-        isSubmitting: false,
-        submitCount: 0,
+        isSubmitting: true,
+        submitCount: 1,
       });
       expect(action).toHaveBeenCalledTimes(0);
 
@@ -328,11 +328,7 @@ describe("FormImpl", () => {
       expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(1);
       const request = action.mock.calls[0][0];
-      expect(request).toEqual({
-        id: expect.stringMatching(/^FormSubmitRequest\//),
-        value: { x: 42, y: 43 },
-        signal: expect.any(AbortSignal),
-      });
+      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
 
       await expect(done).resolves.toEqual({ type: "success", data: "xxx" });
       expect(form.getState()).toEqual({
@@ -354,7 +350,7 @@ describe("FormImpl", () => {
       const listener = jest.fn(() => {});
       form.root.on("submit", listener);
 
-      const action = jest.fn(async () => "xxx");
+      const action = jest.fn(async (_: FormSubmitRequest<{ x: number; y: number }>) => "xxx");
       const controller = new AbortController();
       controller.abort();
       const done = form.submit(action, { signal: controller.signal });
@@ -363,9 +359,12 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
       expect(listener).toHaveBeenCalled();
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+      expect(request.signal.aborted).toBe(true);
 
       await expect(done).resolves.toEqual({ type: "canceled", reason: "aborted" });
-      expect(action).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
