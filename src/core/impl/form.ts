@@ -112,7 +112,7 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  submit(action: FormSubmitAction<T>, options?: FormSubmitOptions): Promise<void> {
+  submit<R>(action: FormSubmitAction<T, R>, options?: FormSubmitOptions): Promise<R> {
     const signal = options?.signal;
     const controller = new window.AbortController();
     if (signal) {
@@ -135,7 +135,7 @@ export class FormImpl<T> implements Form<T> {
     this.submitCount += 1;
     this.updateStateSubmitCount();
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<R>((resolve, reject) => {
       if (controller.signal.aborted) {
         reject(new Error("Aborted"));
         return;
@@ -144,8 +144,8 @@ export class FormImpl<T> implements Form<T> {
         reject(new Error("Aborted"));
       });
       action(request).then(
-        () => {
-          resolve();
+        res => {
+          resolve(res);
         },
         (err: unknown) => {
           reject(err);

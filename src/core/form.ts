@@ -7,7 +7,7 @@ export interface Form<T> {
   getState(): FormState;
   subscribe(subscriber: FormStateSubscriber): Disposable;
   unsubscribe(subscriber: FormStateSubscriber): void;
-  submit(action: FormSubmitAction<T>, options?: FormSubmitOptions): Promise<void>;
+  submit<R>(action: FormSubmitAction<T, R>, options?: FormSubmitOptions): Promise<R>;
   reset(value?: T): void;
 }
 
@@ -17,7 +17,7 @@ export type FormState = Readonly<{
 }>;
 export type FormStateSubscriber = (state: FormState) => void;
 
-export type FormSubmitAction<T> = (req: FormSubmitRequest<T>) => Promise<void>;
+export type FormSubmitAction<T, R> = (req: FormSubmitRequest<T>) => Promise<R>;
 export type FormSubmitRequest<T> = Readonly<{
   id: string;
   value: T;

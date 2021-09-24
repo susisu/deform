@@ -149,7 +149,7 @@ describe("FormImpl", () => {
       const subscriber = jest.fn(() => {});
       form.subscribe(subscriber);
 
-      const [promise, resolve] = triplet<void>();
+      const [promise, resolve] = triplet<string>();
       const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
       const done = form.submit(action);
       expect(form.getState()).toEqual({
@@ -172,8 +172,8 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
 
-      resolve();
-      await done;
+      resolve("foo");
+      await expect(done).resolves.toBe("foo");
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -195,7 +195,7 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
-      const [promise, , reject] = triplet<void>();
+      const [promise, , reject] = triplet<string>();
       const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
       const done = form.submit(action);
       expect(form.getState()).toEqual({
@@ -224,7 +224,7 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
-      const action = jest.fn(async () => {});
+      const action = jest.fn(async () => "foo");
       const controller = new window.AbortController();
       controller.abort();
       const done = form.submit(action, { signal: controller.signal });
@@ -252,7 +252,7 @@ describe("FormImpl", () => {
       });
 
       const action = jest.fn(
-        (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<void>(() => {})
+        (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<string>(() => {})
       );
       const controller = new window.AbortController();
       const done = form.submit(action, { signal: controller.signal });
@@ -291,7 +291,7 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
-      const [promise1, resolve1] = triplet<void>();
+      const [promise1, resolve1] = triplet<string>();
       const action1 = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise1);
       const done1 = form.submit(action1);
       expect(action1).toHaveBeenCalledTimes(1);
@@ -302,7 +302,7 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
 
-      const [promise2, resolve2] = triplet<void>();
+      const [promise2, resolve2] = triplet<string>();
       const action2 = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise2);
       const done2 = form.submit(action2);
       expect(action2).toHaveBeenCalledTimes(1);
@@ -313,15 +313,15 @@ describe("FormImpl", () => {
         submitCount: 2,
       });
 
-      resolve1();
-      await done1;
+      resolve1("foo");
+      await expect(done1).resolves.toBe("foo");
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 2,
       });
 
-      resolve2();
-      await done2;
+      resolve2("bar");
+      await expect(done2).resolves.toBe("bar");
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 2,

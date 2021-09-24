@@ -166,7 +166,9 @@ describe("useFormState", () => {
       submitCount: 0,
     });
 
-    await act(() => form.submit(async () => {}));
+    await act(async () => {
+      await form.submit(async () => {});
+    });
     expect(t.result.current).toEqual({
       isSubmitting: false,
       submitCount: 1,
