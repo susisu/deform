@@ -154,7 +154,7 @@ export abstract class FieldImpl<T> implements Field<T> {
       return;
     }
     this.isDispatchQueued = true;
-    window.queueMicrotask(() => {
+    queueMicrotask(() => {
       this.flushDispatchQueue();
     });
   }
@@ -376,7 +376,7 @@ export abstract class FieldImpl<T> implements Field<T> {
 
     this.abortPendingValidation(key);
 
-    const controller = new window.AbortController();
+    const controller = new AbortController();
 
     const request: ValidationRequest<T> = {
       id: `ValidationRequest/${uniqueId()}`,

@@ -80,7 +80,7 @@ export class FormImpl<T> implements Form<T> {
     }
     this.isDispatchQueued = true;
 
-    window.queueMicrotask(() => {
+    queueMicrotask(() => {
       this.isDispatchQueued = false;
 
       const state = this.state;
@@ -130,7 +130,7 @@ export class FormImpl<T> implements Form<T> {
       }
     }
 
-    const controller = new window.AbortController();
+    const controller = new AbortController();
     if (signal) {
       if (signal.aborted) {
         controller.abort();

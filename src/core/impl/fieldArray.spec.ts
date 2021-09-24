@@ -1184,7 +1184,7 @@ describe("FieldArrayImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: true })
@@ -1217,7 +1217,7 @@ describe("FieldArrayImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [1, 2],
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(fieldArray.getSnapshot()).toEqual(
@@ -1647,7 +1647,7 @@ describe("FieldArrayImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: true })
@@ -1668,7 +1668,7 @@ describe("FieldArrayImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: [42],
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(fieldArray.getSnapshot()).toEqual(
@@ -1708,7 +1708,7 @@ describe("FieldArrayImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(fieldArray.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { 0: false }, isPending: true })
@@ -1733,7 +1733,7 @@ describe("FieldArrayImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(fieldArray.getSnapshot()).toEqual(

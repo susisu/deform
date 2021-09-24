@@ -161,7 +161,7 @@ describe("FormImpl", () => {
       expect(request).toEqual({
         id: expect.stringMatching(/^FormSubmitRequest\//),
         value: { x: 42, y: 43 },
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
 
       expect(subscriber).toHaveBeenCalledTimes(0);
@@ -262,7 +262,7 @@ describe("FormImpl", () => {
       expect(request).toEqual({
         id: expect.stringMatching(/^FormSubmitRequest\//),
         value: { x: 42, y: 43 },
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
 
       await expect(done).resolves.toEqual({ type: "success", data: "xxx" });
@@ -283,7 +283,7 @@ describe("FormImpl", () => {
       });
 
       const action = jest.fn(async () => "xxx");
-      const controller = new window.AbortController();
+      const controller = new AbortController();
       controller.abort();
       const done = form.submit(action, { signal: controller.signal });
       expect(form.getState()).toEqual({
@@ -312,7 +312,7 @@ describe("FormImpl", () => {
       const action = jest.fn(
         (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<string>(() => {})
       );
-      const controller = new window.AbortController();
+      const controller = new AbortController();
       const done = form.submit(action, { signal: controller.signal });
       expect(form.getState()).toEqual({
         isSubmitting: true,

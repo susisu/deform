@@ -762,7 +762,7 @@ describe("FieldNodeImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
@@ -793,7 +793,7 @@ describe("FieldNodeImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 1,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(field.getSnapshot()).toEqual(
@@ -1203,7 +1203,7 @@ describe("FieldNodeImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
 
@@ -1222,7 +1222,7 @@ describe("FieldNodeImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(field.getSnapshot()).toEqual(
@@ -1261,7 +1261,7 @@ describe("FieldNodeImpl", () => {
       expect(request1).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(parent.getSnapshot()).toEqual(
         expect.objectContaining({ errors: { x: false }, isPending: true })
@@ -1286,7 +1286,7 @@ describe("FieldNodeImpl", () => {
       expect(request2).toEqual({
         id: expect.stringMatching(/^ValidationRequest\//),
         value: 42,
-        signal: expect.any(window.AbortSignal),
+        signal: expect.any(AbortSignal),
       });
       expect(request2.id).not.toBe(request1.id);
       expect(parent.getSnapshot()).toEqual(

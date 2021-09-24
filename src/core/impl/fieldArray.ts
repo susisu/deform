@@ -105,7 +105,7 @@ export class FieldArrayImpl<T> extends FieldImpl<readonly T[]> implements ChildF
       return;
     }
     this.isFieldsDispatchQueued = true;
-    window.queueMicrotask(() => {
+    queueMicrotask(() => {
       this.flushFieldsDispatchQueue();
     });
   }
