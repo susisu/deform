@@ -1307,6 +1307,48 @@ describe("FieldNodeImpl", () => {
     });
   });
 
+  describe("#waitForValidation", () => {
+    it("returns a promise which will be resolved after all pending validations are settled", async () => {
+      const field = new FieldNodeImpl({
+        path: "$root",
+        defaultValue: 0,
+        value: 42,
+      });
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: {}, isPending: false })
+      );
+
+      let done1 = false;
+      field.waitForValidation().then(() => {
+        done1 = true;
+      });
+      // settled immediately
+      await waitForMicrotasks();
+      expect(done1).toBe(true);
+
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<number>) => promise);
+      field.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(field.getSnapshot()).toEqual(expect.objectContaining({ errors: {}, isPending: true }));
+
+      let done2 = false;
+      field.waitForValidation().then(() => {
+        done2 = true;
+      });
+      // not settled yet
+      await waitForMicrotasks();
+      expect(done2).toBe(false);
+
+      resolve(true);
+      await waitForMicrotasks();
+      expect(field.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { foo: true }, isPending: false })
+      );
+      expect(done2).toBe(true);
+    });
+  });
+
   describe("#connect", () => {
     it("throws error if the field has no parent", () => {
       const field = new FieldNodeImpl({

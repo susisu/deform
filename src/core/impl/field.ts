@@ -1,3 +1,4 @@
+import { triplet } from "@susisu/promise-utils";
 import { EventListener } from "../events";
 import {
   Errors,
@@ -49,6 +50,8 @@ export abstract class FieldImpl<T> implements Field<T> {
   private subscribers: Set<Subscriber<T>>;
   private isDispatchQueued: boolean;
 
+  private pendingPromise: Readonly<{ promise: Promise<void>; resolve: () => void }>;
+
   private listeners: Map<string, Set<EventListener>>;
 
   protected isInitializing: boolean;
@@ -90,6 +93,12 @@ export abstract class FieldImpl<T> implements Field<T> {
     };
     this.subscribers = new Set();
     this.isDispatchQueued = false;
+
+    const [promise, resolve] = triplet<void>();
+    if (!this.snapshot.isPending) {
+      resolve();
+    }
+    this.pendingPromise = { promise, resolve };
 
     this.listeners = new Map();
   }
@@ -231,6 +240,12 @@ export abstract class FieldImpl<T> implements Field<T> {
     }
     this.snapshot = { ...this.snapshot, isPending };
     this.queueDispatch();
+    if (isPending) {
+      const [promise, resolve] = triplet<void>();
+      this.pendingPromise = { promise, resolve };
+    } else {
+      this.pendingPromise.resolve();
+    }
     this.updateParentIsPending();
   }
 
@@ -435,6 +450,10 @@ export abstract class FieldImpl<T> implements Field<T> {
   validate(): void {
     this.validateChildren();
     this.runAllValidators();
+  }
+
+  waitForValidation(): Promise<void> {
+    return this.pendingPromise.promise;
   }
 
   protected setChildIsDirty(key: PropertyKey, isDirty: boolean): void {

@@ -1754,6 +1754,50 @@ describe("FieldArrayImpl", () => {
     });
   });
 
+  describe("#waitForValidation", () => {
+    it("returns a promise which will be resolved after all pending validations are settled", async () => {
+      const fieldArray = new FieldArrayImpl({
+        path: "$root",
+        defaultValue: [0],
+        value: [42],
+      });
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: false })
+      );
+
+      let done1 = false;
+      fieldArray.waitForValidation().then(() => {
+        done1 = true;
+      });
+      // settled immediately
+      await waitForMicrotasks();
+      expect(done1).toBe(true);
+
+      const [promise, resolve] = triplet<unknown>();
+      const validator = jest.fn((_: ValidationRequest<readonly number[]>) => promise);
+      fieldArray.addValidator("foo", validator);
+      expect(validator).toHaveBeenCalledTimes(1);
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false }, isPending: true })
+      );
+
+      let done2 = false;
+      fieldArray.waitForValidation().then(() => {
+        done2 = true;
+      });
+      // not settled yet
+      await waitForMicrotasks();
+      expect(done2).toBe(false);
+
+      resolve(true);
+      await waitForMicrotasks();
+      expect(fieldArray.getSnapshot()).toEqual(
+        expect.objectContaining({ errors: { 0: false, foo: true }, isPending: false })
+      );
+      expect(done2).toBe(true);
+    });
+  });
+
   describe("#connect", () => {
     it("throws error if the field array has no parent", () => {
       const fieldArray = new FieldArrayImpl({

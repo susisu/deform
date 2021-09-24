@@ -16,6 +16,7 @@ export interface Field<T> extends EventEmitter {
   addValidator(key: string, validator: Validator<T>): Disposable;
   removeValidator(key: string, validator: Validator<T>): void;
   validate(): void;
+  waitForValidation(): Promise<void>;
 }
 
 export type Snapshot<T> = Readonly<{

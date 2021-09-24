@@ -24,12 +24,14 @@
     "clean:rm": "rimraf lib",
     "prepublishOnly": "run-s clean lint test build"
   },
+  "dependencies": {
+    "@susisu/promise-utils": "^0.1.0"
+  },
   "peerDependencies": {
     "react": "^16.14.0 || ^17.0.0"
   },
   "devDependencies": {
     "@susisu/eslint-config": "^0.0.39",
-    "@susisu/promise-utils": "^0.1.0",
     "@testing-library/react-hooks": "^7.0.2",
     "@types/jest": "^27.0.2",
     "@types/react": "^17.0.24",
