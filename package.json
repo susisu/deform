@@ -1,6 +1,6 @@
 {
   "name": "@susisu/deform",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha",
   "description": "A form management library for React",
   "repository": "https://github.com/susisu/deform.git",
   "author": "Susisu <susisu2413@yahoo.co.jp>",
