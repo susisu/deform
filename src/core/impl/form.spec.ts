@@ -252,6 +252,59 @@ describe("FormImpl", () => {
       });
     });
 
+    it("waits for pending validation before validity check", async () => {
+      const form = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+      const [validatorPromise, validatorResolve] = triplet<unknown>();
+      form.root.addValidator("foo", () => validatorPromise);
+
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
+      const [actionPromise, actionResolve] = triplet<unknown>();
+      const action = jest.fn(
+        async (_: FormSubmitRequest<{ x: number; y: number }>) => actionPromise
+      );
+      const done = form.submit(action);
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+      expect(listener).toHaveBeenCalled();
+      expect(action).toHaveBeenCalledTimes(0);
+
+      // not submitted yet
+      await waitForMicrotasks();
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+      expect(action).toHaveBeenCalledTimes(0);
+
+      validatorResolve(false);
+      await waitForMicrotasks();
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
+      expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
+
+      actionResolve("xxx");
+      await expect(done).resolves.toEqual({ type: "success", data: "xxx" });
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 1,
+      });
+    });
+
     it("skips validity check if skipValidation = true is specified", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },

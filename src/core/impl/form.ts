@@ -123,10 +123,9 @@ export class FormImpl<T> implements Form<T> {
     this.root.emit("submit");
 
     if (!skipValidation) {
-      // TODO
-      // while (this.root.getSnapshot().isPending) {
-      //   await this.root.waitForValidation();
-      // }
+      while (this.root.getSnapshot().isPending) {
+        await this.root.waitForValidation();
+      }
       if (!isValid(this.root.getSnapshot().errors)) {
         return { type: "canceled", reason: "validationError" };
       }
