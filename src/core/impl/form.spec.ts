@@ -149,6 +149,9 @@ describe("FormImpl", () => {
       const subscriber = jest.fn(() => {});
       form.subscribe(subscriber);
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const [promise, resolve] = triplet<string>();
       const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
       const done = form.submit(action);
@@ -156,6 +159,7 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(1);
       const request = action.mock.calls[0][0];
       expect(request).toEqual({
@@ -195,6 +199,9 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const [promise, , reject] = triplet<string>();
       const action = jest.fn((_: FormSubmitRequest<{ x: number; y: number }>) => promise);
       const done = form.submit(action);
@@ -202,6 +209,7 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(1);
       const request = action.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));
@@ -225,12 +233,16 @@ describe("FormImpl", () => {
       });
       form.root.addValidator("foo", () => true);
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const action = jest.fn(async () => "xxx");
       const done = form.submit(action);
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 0,
       });
+      expect(listener).toHaveBeenCalled();
 
       await expect(done).resolves.toEqual({ type: "canceled", reason: "validationError" });
       expect(action).toHaveBeenCalledTimes(0);
@@ -251,12 +263,16 @@ describe("FormImpl", () => {
       });
       form.root.addValidator("foo", () => true);
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const action = jest.fn(async (_: FormSubmitRequest<{ x: number; y: number }>) => "xxx");
       const done = form.submit(action, { skipValidation: true });
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(1);
       const request = action.mock.calls[0][0];
       expect(request).toEqual({
@@ -282,6 +298,9 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const action = jest.fn(async () => "xxx");
       const controller = new AbortController();
       controller.abort();
@@ -290,6 +309,7 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(listener).toHaveBeenCalled();
 
       await expect(done).resolves.toEqual({ type: "canceled", reason: "aborted" });
       expect(action).toHaveBeenCalledTimes(0);
@@ -309,6 +329,9 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
+      const listener = jest.fn(() => {});
+      form.root.on("submit", listener);
+
       const action = jest.fn(
         (_: FormSubmitRequest<{ x: number; y: number }>) => new Promise<string>(() => {})
       );
@@ -318,6 +341,7 @@ describe("FormImpl", () => {
         isSubmitting: true,
         submitCount: 1,
       });
+      expect(listener).toHaveBeenCalled();
       expect(action).toHaveBeenCalledTimes(1);
       const request = action.mock.calls[0][0];
       expect(request).toEqual(expect.objectContaining({ value: { x: 42, y: 43 } }));

@@ -120,6 +120,8 @@ export class FormImpl<T> implements Form<T> {
     const skipValidation = options?.skipValidation ?? false;
     const signal = options?.signal;
 
+    this.root.emit("submit");
+
     if (!skipValidation) {
       // TODO
       // while (this.root.getSnapshot().isPending) {
