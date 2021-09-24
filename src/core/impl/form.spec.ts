@@ -172,8 +172,8 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
 
-      resolve("foo");
-      await expect(done).resolves.toBe("foo");
+      resolve("xxx");
+      await expect(done).resolves.toEqual({ type: "success", data: "xxx" });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -214,6 +214,64 @@ describe("FormImpl", () => {
       });
     });
 
+    it("checks validity before calling action", async () => {
+      const form = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+      form.root.addValidator("foo", () => true);
+
+      const action = jest.fn(async () => "xxx");
+      const done = form.submit(action);
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+
+      await expect(done).resolves.toEqual({ type: "canceled", reason: "validationError" });
+      expect(action).toHaveBeenCalledTimes(0);
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+    });
+
+    it("skips validity check if skipValidation = true is specified", async () => {
+      const form = new FormImpl({
+        defaultValue: { x: 0, y: 1 },
+        value: { x: 42, y: 43 },
+      });
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 0,
+      });
+      form.root.addValidator("foo", () => true);
+
+      const action = jest.fn(async (_: FormSubmitRequest<{ x: number; y: number }>) => "xxx");
+      const done = form.submit(action, { skipValidation: true });
+      expect(form.getState()).toEqual({
+        isSubmitting: true,
+        submitCount: 1,
+      });
+      expect(action).toHaveBeenCalledTimes(1);
+      const request = action.mock.calls[0][0];
+      expect(request).toEqual({
+        id: expect.stringMatching(/^FormSubmitRequest\//),
+        value: { x: 42, y: 43 },
+        signal: expect.any(window.AbortSignal),
+      });
+
+      await expect(done).resolves.toEqual({ type: "success", data: "xxx" });
+      expect(form.getState()).toEqual({
+        isSubmitting: false,
+        submitCount: 1,
+      });
+    });
+
     it("is aborted if the signal has already been aborted", async () => {
       const form = new FormImpl({
         defaultValue: { x: 0, y: 1 },
@@ -224,7 +282,7 @@ describe("FormImpl", () => {
         submitCount: 0,
       });
 
-      const action = jest.fn(async () => "foo");
+      const action = jest.fn(async () => "xxx");
       const controller = new window.AbortController();
       controller.abort();
       const done = form.submit(action, { signal: controller.signal });
@@ -233,7 +291,7 @@ describe("FormImpl", () => {
         submitCount: 1,
       });
 
-      await expect(done).rejects.toThrowError("Aborted");
+      await expect(done).resolves.toEqual({ type: "canceled", reason: "aborted" });
       expect(action).toHaveBeenCalledTimes(0);
       expect(form.getState()).toEqual({
         isSubmitting: false,
@@ -274,7 +332,7 @@ describe("FormImpl", () => {
       controller.abort();
       expect(onAbort).toHaveBeenCalled();
 
-      await expect(done).rejects.toThrowError("Aborted");
+      await expect(done).resolves.toEqual({ type: "canceled", reason: "aborted" });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 1,
@@ -313,15 +371,15 @@ describe("FormImpl", () => {
         submitCount: 2,
       });
 
-      resolve1("foo");
-      await expect(done1).resolves.toBe("foo");
+      resolve1("xxx");
+      await expect(done1).resolves.toEqual({ type: "success", data: "xxx" });
       expect(form.getState()).toEqual({
         isSubmitting: true,
         submitCount: 2,
       });
 
-      resolve2("bar");
-      await expect(done2).resolves.toBe("bar");
+      resolve2("yyy");
+      await expect(done2).resolves.toEqual({ type: "success", data: "yyy" });
       expect(form.getState()).toEqual({
         isSubmitting: false,
         submitCount: 2,

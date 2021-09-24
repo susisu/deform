@@ -1,4 +1,4 @@
-import { FieldNode } from "../field";
+import { FieldNode, isValid } from "../field";
 import {
   Form,
   FormState,
@@ -6,6 +6,7 @@ import {
   FormSubmitAction,
   FormSubmitOptions,
   FormSubmitRequest,
+  FormSubmitResult,
 } from "../form";
 import { Disposable } from "../shared";
 import { FieldNodeImpl } from "./fieldNode";
@@ -112,8 +113,23 @@ export class FormImpl<T> implements Form<T> {
     this.queueDispatch();
   }
 
-  submit<R>(action: FormSubmitAction<T, R>, options?: FormSubmitOptions): Promise<R> {
+  async submit<R>(
+    action: FormSubmitAction<T, R>,
+    options?: FormSubmitOptions
+  ): Promise<FormSubmitResult<R>> {
+    const skipValidation = options?.skipValidation ?? false;
     const signal = options?.signal;
+
+    if (!skipValidation) {
+      // TODO
+      // while (this.root.getSnapshot().isPending) {
+      //   await this.root.waitForValidation();
+      // }
+      if (!isValid(this.root.getSnapshot().errors)) {
+        return { type: "canceled", reason: "validationError" };
+      }
+    }
+
     const controller = new window.AbortController();
     if (signal) {
       if (signal.aborted) {
@@ -135,21 +151,20 @@ export class FormImpl<T> implements Form<T> {
     this.submitCount += 1;
     this.updateStateSubmitCount();
 
-    return new Promise<R>((resolve, reject) => {
+    return new Promise<FormSubmitResult<R>>((resolve, reject) => {
       if (controller.signal.aborted) {
-        reject(new Error("Aborted"));
+        resolve({ type: "canceled", reason: "aborted" });
         return;
       }
       controller.signal.addEventListener("abort", () => {
-        reject(new Error("Aborted"));
+        resolve({ type: "canceled", reason: "aborted" });
       });
       action(request).then(
-        res => {
-          resolve(res);
+        data => {
+          resolve({ type: "success", data });
         },
         (err: unknown) => {
           reject(err);
-          controller.abort();
         }
       );
     }).finally(() => {

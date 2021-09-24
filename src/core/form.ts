@@ -7,7 +7,10 @@ export interface Form<T> {
   getState(): FormState;
   subscribe(subscriber: FormStateSubscriber): Disposable;
   unsubscribe(subscriber: FormStateSubscriber): void;
-  submit<R>(action: FormSubmitAction<T, R>, options?: FormSubmitOptions): Promise<R>;
+  submit<R>(
+    action: FormSubmitAction<T, R>,
+    options?: FormSubmitOptions
+  ): Promise<FormSubmitResult<R>>;
   reset(value?: T): void;
 }
 
@@ -24,5 +27,10 @@ export type FormSubmitRequest<T> = Readonly<{
   signal: AbortSignal;
 }>;
 export type FormSubmitOptions = Readonly<{
+  skipValidation?: boolean | undefined;
   signal?: AbortSignal | undefined;
 }>;
+export type FormSubmitResult<R> =
+  | Readonly<{ type: "success"; data: R }>
+  | Readonly<{ type: "canceled"; reason: FormSubmitCancelReason }>;
+export type FormSubmitCancelReason = "validationError" | "aborted";
