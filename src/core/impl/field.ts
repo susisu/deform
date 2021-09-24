@@ -395,7 +395,7 @@ export abstract class FieldImpl<T> implements Field<T> {
             this.resolveValidation(key, request.id, error);
           }
         },
-        err => {
+        (err: unknown) => {
           if (!controller.signal.aborted) {
             // eslint-disable-next-line no-console
             console.error(err);
