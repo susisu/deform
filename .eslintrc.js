@@ -7,7 +7,7 @@ module.exports = {
     {
       files: ["*.{ts,tsx}"],
       extends: [
-        "@susisu/eslint-config/preset/ts-types",
+        "@susisu/eslint-config/preset/ts",
         "plugin:eslint-comments/recommended",
         "plugin:import/typescript",
         "plugin:react/recommended",
@@ -67,7 +67,7 @@ module.exports = {
     {
       files: ["*.js"],
       extends: [
-        "@susisu/eslint-config/preset/es",
+        "@susisu/eslint-config/preset/js",
         "plugin:eslint-comments/recommended",
         "prettier",
       ],
