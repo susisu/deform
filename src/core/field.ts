@@ -1,5 +1,5 @@
 import { EventEmitter } from "./events";
-import { Disposable, ElementType } from "./shared";
+import { AsArray, Disposable, ElementType } from "./shared";
 
 export interface Field<T> extends EventEmitter {
   readonly id: string;
@@ -64,7 +64,9 @@ export interface ChildField {
 
 export interface FieldNode<T> extends Field<T> {
   createChild<K extends ChildKeyOf<T>>(key: K): ChildFieldNode<T[K]>;
-  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>>;
+  createChildArray<K extends ChildArrayKeyOf<T>>(
+    key: K
+  ): ChildFieldArray<ElementType<AsArray<T[K]>>>;
 }
 
 export interface ChildFieldNode<T> extends FieldNode<T>, ChildField {}

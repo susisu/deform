@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  AsArray,
   ChildArrayKeyOf,
   ChildKeyOf,
   CreateFormParams,
@@ -37,7 +38,7 @@ export function useChild<T, K extends ChildKeyOf<T>>(field: FieldNode<T>, key: K
 export function useChildArray<T, K extends ChildArrayKeyOf<T>>(
   field: FieldNode<T>,
   key: K
-): FieldArray<ElementType<T[K]>> {
+): FieldArray<ElementType<AsArray<T[K]>>> {
   const [childArray] = useState(() => field.createChildArray(key));
 
   useEffect(() => {

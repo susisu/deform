@@ -1,4 +1,4 @@
-export { Disposable, ElementType } from "./shared";
+export { AsArray, Disposable, ElementType } from "./shared";
 export {
   Field,
   Snapshot,

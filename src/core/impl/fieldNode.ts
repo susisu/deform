@@ -1,5 +1,5 @@
 import { ChildArrayKeyOf, ChildFieldArray, ChildFieldNode, ChildKeyOf } from "../field";
-import { ElementType } from "../shared";
+import { AsArray, ElementType } from "../shared";
 import { FieldImpl } from "./field";
 import { FieldArrayImpl } from "./fieldArray";
 import { Child, Getter, Parent, Setter } from "./shared";
@@ -56,7 +56,9 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
     return field;
   }
 
-  createChildArray<K extends ChildArrayKeyOf<T>>(key: K): ChildFieldArray<ElementType<T[K]>> {
+  createChildArray<K extends ChildArrayKeyOf<T>>(
+    key: K
+  ): ChildFieldArray<ElementType<AsArray<T[K]>>> {
     const path = `${this.path}.${String(key)}`;
     if (
       Object.getPrototypeOf(this.getDefaultValue()) !== Object.prototype ||
@@ -76,8 +78,8 @@ export class FieldNodeImpl<T> extends FieldImpl<T> implements ChildFieldNode<T> 
         `You are creating a field array '${path}', but the value of '${path}' is not a pure array. This may cause unexpected errors.`
       );
     }
-    type E = ElementType<T[K]>;
-    const getter: Getter<T, readonly E[]> = value => value[key];
+    type E = ElementType<AsArray<T[K]>>;
+    const getter: Getter<T, readonly E[]> = value => value[key] as AsArray<T[K]>;
     const setter: Setter<T, readonly E[]> = (value, x) => {
       if (Object.is(value[key], x)) {
         return value;
