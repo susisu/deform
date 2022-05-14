@@ -147,6 +147,7 @@ export class FormImpl<T> implements Form<T> {
             if (controller.signal.aborted) {
               throw new Error(`Request '${requestId}' has been aborted`);
             }
+            // eslint-disable-next-line no-await-in-loop
             await this.root.waitForValidation();
           }
           if (!isValid(this.root.getSnapshot().errors)) {
