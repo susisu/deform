@@ -3,7 +3,7 @@ import { Disposable } from "./shared";
 
 export type Form<T> = Readonly<{
   id: string;
-  root: ParentField<T>;
+  field: ParentField<T>;
 
   getState: () => FormState;
   subscribeState: (subscriber: FormStateSubscriber) => Disposable;
