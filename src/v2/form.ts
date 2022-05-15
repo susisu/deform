@@ -1,12 +1,12 @@
 import { Field } from "./field";
+import { Disposable } from "./shared";
 
 export type Form<T> = Readonly<{
   id: string;
   root: Field<T>; // TODO: FieldNode<T>
 
   getState: () => FormState;
-  subscribeState: (subscriber: FormStateSubscriber) => void;
-  unsubscribeState: (subscriber: FormStateSubscriber) => void;
+  subscribeState: (subscriber: FormStateSubscriber) => Disposable;
 
   submit: <R>(
     action: FormSubmitAction<T, R>,

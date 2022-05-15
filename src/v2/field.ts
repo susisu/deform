@@ -1,9 +1,10 @@
+import { Disposable } from "./shared";
+
 export type Field<T> = Readonly<{
   id: string;
 
   getState: () => FieldState<T>;
-  subscribeState: (subscriber: FieldStateSubscriber<T>) => void;
-  unsubscribeState: (subscriber: FieldStateSubscriber<T>) => void;
+  subscribeState: (subscriber: FieldStateSubscriber<T>) => Disposable;
   flushStateDispatchQueue: () => void;
 
   setDefaultValue: (value: T) => void;
@@ -12,8 +13,7 @@ export type Field<T> = Readonly<{
   setTouched: () => void;
   setCustomErrors: (key: string, errors: FieldErrors | undefined) => void;
 
-  addValidator: (key: string, validator: Validator<T>) => void;
-  removeValidator: (key: string, validator: Validator<T>) => void;
+  attachValidator: (key: string, validator: Validator<T>) => Disposable;
   validate: () => void;
   waitForValidation: () => Promise<void>;
 
