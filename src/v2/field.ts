@@ -69,3 +69,38 @@ export type ValidationRequest<T> = Readonly<{
   value: T;
   signal: AbortSignal;
 }>;
+
+export type ChildField<T> = Field<T> &
+  Readonly<{
+    setParentChannel: (parentChannel: ParentFieldChannel<T>) => Disposable;
+    createChildChannel: <P>(getter: (value: P) => T) => ChildFieldChannel<P>;
+  }>;
+
+export type ParentFieldChannel<T> = Readonly<{
+  setDefaultValue: (defaultValue: T) => void;
+  setValue: (value: T) => void;
+  setIsDirty: (isDirty: boolean) => void;
+  setIsTouched: (isTouched: boolean) => void;
+  setIsPending: (isPending: boolean) => void;
+  setErrors: (errors: FieldErrors) => void;
+}>;
+
+export type ChildFieldChannel<T> = Readonly<{
+  setDefaultValue: (defaultValue: T) => void;
+  setValue: (value: T) => void;
+  validate: () => void;
+  reset: () => void;
+}>;
+
+export type ParentField<T> = Field<T> &
+  Readonly<{
+    attachChild: <K extends ChildKeyOf<T>>(key: K, child: ChildField<T[K]>) => Disposable;
+  }>;
+
+export type ChildKeyOf<T> = [T] extends [object] ? NonIndexKey<keyof T> : never;
+type NonIndexKey<K extends PropertyKey> =
+  // prettier-ignore
+  string extends K ? never
+  : number extends K ? never
+  : symbol extends K ? never
+  : K;
