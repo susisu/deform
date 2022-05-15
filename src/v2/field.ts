@@ -1,3 +1,25 @@
+export type Field<T> = Readonly<{
+  id: string;
+
+  getState: () => FieldState<T>;
+  subscribeState: (subscriber: FieldStateSubscriber<T>) => void;
+  unsubscribeState: (subscriber: FieldStateSubscriber<T>) => void;
+  flushStateDispatchQueue: () => void;
+
+  setDefaultValue: (value: T) => void;
+  setValue: (value: T) => void;
+  setDirty: () => void;
+  setTouched: () => void;
+  setCustomErrors: (key: string, errors: FieldErrors | undefined) => void;
+
+  addValidator: (key: string, validator: Validator<T>) => void;
+  removeValidator: (key: string, validator: Validator<T>) => void;
+  validate: () => void;
+  waitForValidation: () => Promise<void>;
+
+  reset: () => void;
+}>;
+
 export type FieldState<T, E extends FieldErrors = FieldErrors> = Readonly<{
   defaultValue: T;
   value: T;
@@ -35,3 +57,15 @@ export function isValid(errors: FieldErrors): boolean {
   const keys = Object.keys(errors);
   return keys.every(key => !errors[key]);
 }
+
+export type FieldStateSubscriber<T> = (state: FieldState<T>) => void;
+
+export type Validator<T, E = unknown> = SyncValidator<T, E> | AsyncValidator<T, E>;
+export type SyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => E;
+export type AsyncValidator<T, E = unknown> = (req: ValidationRequest<T>) => Promise<E>;
+
+export type ValidationRequest<T> = Readonly<{
+  id: string;
+  value: T;
+  signal: AbortSignal;
+}>;
