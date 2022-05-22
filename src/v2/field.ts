@@ -77,6 +77,7 @@ export type ChildField<T> = Field<T> &
   }>;
 
 export type ParentFieldChannel<T> = Readonly<{
+  key: string;
   setDefaultValue: (defaultValue: T) => void;
   setValue: (value: T) => void;
   setIsDirty: (isDirty: boolean) => void;
@@ -86,10 +87,10 @@ export type ParentFieldChannel<T> = Readonly<{
 }>;
 
 export type ChildFieldChannel<T> = Readonly<{
-  setDefaultValue: (defaultValue: T) => void;
-  setValue: (value: T) => void;
-  validate: () => void;
-  reset: () => void;
+  setDefaultValue: (key: string, defaultValue: T) => void;
+  setValue: (key: string, value: T) => void;
+  validate: (key: string) => void;
+  reset: (key: string) => void;
 }>;
 
 export type ParentField<T> = Field<T> &
