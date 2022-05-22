@@ -1,9 +1,10 @@
-import { ChildField, ParentField } from "./field";
+import { ChildField, Field } from "./field";
+import { FieldNode } from "./fieldNode";
 import { Disposable } from "./shared";
 
-export type FieldArray<T> = ChildField<readonly T[]> &
+export type FieldArray<T> = Field<readonly T[]> &
   Readonly<{
-    getFields: () => ReadonlyArray<ParentField<T>>;
+    getFields: () => ReadonlyArray<FieldNode<T>>;
     subscribeFields: (subscriber: FieldsSubscriber<T>) => Disposable;
 
     append: (value: T) => void;
@@ -14,4 +15,6 @@ export type FieldArray<T> = ChildField<readonly T[]> &
     swap: (indexA: number, indexB: number) => void;
   }>;
 
-export type FieldsSubscriber<T> = (fields: ReadonlyArray<ParentField<T>>) => void;
+export type FieldsSubscriber<T> = (fields: ReadonlyArray<FieldNode<T>>) => void;
+
+export type ChildFieldArray<T> = FieldArray<T> & ChildField<readonly T[]>;

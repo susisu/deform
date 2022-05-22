@@ -1,9 +1,9 @@
-import { ParentField } from "./field";
+import { FieldNode } from "./fieldNode";
 import { Disposable } from "./shared";
 
 export type Form<T> = Readonly<{
   id: string;
-  field: ParentField<T>;
+  field: FieldNode<T>;
 
   getState: () => FormState;
   subscribeState: (subscriber: FormStateSubscriber) => Disposable;
