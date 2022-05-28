@@ -3,6 +3,7 @@ import { Disposable } from "./shared";
 
 export type Form<T> = Readonly<{
   id: string;
+
   field: FieldNode<T>;
 
   getState: () => FormState;
