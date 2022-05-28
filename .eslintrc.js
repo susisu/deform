@@ -32,6 +32,7 @@ module.exports = {
         "sort-imports": ["error", { ignoreDeclarationSort: true }],
         "eslint-comments/no-unused-disable": "error",
         "import/no-default-export": "error",
+        "import/no-duplicates": "error",
         "import/no-useless-path-segments": ["error", { noUselessIndex: true }],
         "import/order": ["error", { alphabetize: { order: "asc" } }],
         "react/prop-types": "off",
