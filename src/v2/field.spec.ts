@@ -4,6 +4,8 @@ describe("equalFieldErrors", () => {
   const obj = { id: 42 };
 
   it.each([
+    // equal if the same object is given
+    [obj, obj, true],
     // equal if both keys and values match
     [{}, {}, true],
     [{ foo: true, bar: false }, { foo: true, bar: false }, true],
